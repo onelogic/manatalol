@@ -19,4 +19,61 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.8" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\css\themes\" />
+    <Folder Include="wwwroot\eTemplates\" />
+    <Folder Include="wwwroot\icons\" />
+    <Folder Include="wwwroot\img\browsers\" />
+    <Folder Include="wwwroot\img\cardcovers\" />
+    <Folder Include="wwwroot\img\demo\avatars\" />
+    <Folder Include="wwwroot\img\demo\gallery\thumb\" />
+    <Folder Include="wwwroot\img\demo\pages\" />
+    <Folder Include="wwwroot\img\landing\" />
+    <Folder Include="wwwroot\img\patterns\" />
+    <Folder Include="wwwroot\img\products\" />
+    <Folder Include="wwwroot\img\profile\" />
+    <Folder Include="wwwroot\img\search\" />
+    <Folder Include="wwwroot\img\thumbs\" />
+    <Folder Include="wwwroot\json\" />
+    <Folder Include="wwwroot\media\sound\" />
+    <Folder Include="wwwroot\plugins\apexcharts\" />
+    <Folder Include="wwwroot\plugins\bootstrap\" />
+    <Folder Include="wwwroot\plugins\easypiechart\" />
+    <Folder Include="wwwroot\plugins\fullcalendar\" />
+    <Folder Include="wwwroot\plugins\highlightjs\" />
+    <Folder Include="wwwroot\plugins\jquery\" />
+    <Folder Include="wwwroot\plugins\jsvectormap\" />
+    <Folder Include="wwwroot\plugins\masonry\" />
+    <Folder Include="wwwroot\plugins\peity\" />
+    <Folder Include="wwwroot\plugins\sortablejs\" />
+    <Folder Include="wwwroot\plugins\three\" />
+    <Folder Include="wwwroot\plugins\vanta\" />
+    <Folder Include="wwwroot\plugins\waves\" />
+    <Folder Include="wwwroot\scripts\core\" />
+    <Folder Include="wwwroot\scripts\optional\smartTables\" />
+    <Folder Include="wwwroot\scripts\pages\" />
+    <Folder Include="wwwroot\scripts\thirdparty\" />
+    <Folder Include="wwwroot\scss\app\" />
+    <Folder Include="wwwroot\scss\themes\aurora\" />
+    <Folder Include="wwwroot\scss\themes\bootstrap\forms\" />
+    <Folder Include="wwwroot\scss\themes\bootstrap\helpers\" />
+    <Folder Include="wwwroot\scss\themes\bootstrap\mixins\" />
+    <Folder Include="wwwroot\scss\themes\bootstrap\utilities\" />
+    <Folder Include="wwwroot\scss\themes\bootstrap\vendor\" />
+    <Folder Include="wwwroot\scss\themes\earth\" />
+    <Folder Include="wwwroot\scss\themes\flare\" />
+    <Folder Include="wwwroot\scss\themes\lunar\" />
+    <Folder Include="wwwroot\scss\themes\nebula\" />
+    <Folder Include="wwwroot\scss\themes\night\" />
+    <Folder Include="wwwroot\scss\themes\olive\" />
+    <Folder Include="wwwroot\scss\themes\solar\" />
+    <Folder Include="wwwroot\scss\themes\storm\" />
+    <Folder Include="wwwroot\webfonts\fontawesome\fonts\" />
+    <Folder Include="wwwroot\webfonts\smartadmin\fonts\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Manatalol.App.sln" />
+  </ItemGroup>
+
 </Project>
