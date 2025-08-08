@@ -1,5 +1,6 @@
 @page "/login"
 @model Smartadmin.Pages.Auth.LoginModel
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 
 @{
     ViewBag.Title = "Login";
@@ -16,9 +17,6 @@
         <a class="navbar-brand" href="/">
             <img alt="logo" src="~/img/logo.png" />
         </a>
-        <div class="ms-auto d-flex gap-2">
-            <a class="btn btn-link text-white border-0 text-decoration-none" href="/login">Login</a>
-        </div>
     </div>
 </nav>
 <section class="hero-section position-relative overflow-hidden">
@@ -27,28 +25,24 @@
             <div class="col-11 col-md-8 col-lg-6 col-xl-4">
                 <div class="login-card p-4 p-md-6 bg-dark bg-opacity-50 translucent-dark rounded-4" id="regular-login">
                     <h2 class="text-center mb-4">Login</h2>
-                    <form action="/appintel">
+                    <form method="post">
                         <div class="mb-3">
-                            <label class="form-label" for="email">Email or Phone</label>
-                            <input
-                                class="form-control form-control-lg text-white bg-dark border-light border-opacity-25 bg-opacity-25"
-                                id="email" required="" type="email" />
+                            <label asp-for="Input.Email" class="form-label"></label>
+                            <input asp-for="Input.Email" class="form-control form-control-lg text-white bg-dark border-light border-opacity-25 bg-opacity-25" />
+                            <span asp-validation-for="Input.Email" class="text-danger"></span>
                         </div>
+
                         <div class="mb-3">
-                            <label class="form-label" for="password">Password</label>
-                            <div class="input-group">
-                                <input
-                                    class="form-control form-control-lg text-white bg-dark border-light border-opacity-25 bg-opacity-25"
-                                    id="password" required="" type="password" />
-                            </div>
+                            <label asp-for="Input.Password" class="form-label"></label>
+                            <input asp-for="Input.Password" class="form-control form-control-lg text-white bg-dark border-light border-opacity-25 bg-opacity-25" />
+                            <span asp-validation-for="Input.Password" class="text-danger"></span>
                         </div>
-                        <div class="d-grid mb-3">
-                            <button class="btn btn-primary btn-lg bg-primary bg-opacity-75" type="submit">Sign
-                                In</button>
-                        </div>
-                        <div class="text-center mb-4">
-                            <a class="text-decoration-none small text-white" href="/auth-forgetpassword">Forgot
-                                Password?</a>
+
+                        <div asp-validation-summary="All" class="text-danger"></div>
+                        <button type="submit" class="btn btn-primary btn-lg w-100">Sign In</button>
+
+                        <div class="text-center mt-3">
+                            <a href="/auth/forgetpassword" class="text-white">Forgot Password?</a>
                         </div>
                     </form>
                 </div>
@@ -64,7 +58,7 @@
 @section scripts
 {
     <script src="~/plugins/bootstrap/bootstrap.bundle.min.js"></script>
-    <script src="~/scripts/pages/auth-login.js"></script>
+    <script src="~/scripts/pages/login.js"></script>
     <script src="~/plugins/three/three.min.js"></script>
     <script src="~/plugins/vanta/vanta.halo.min.js"></script>
     <script src="~/plugins/vanta/vanta.net.min.js"></script>

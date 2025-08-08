@@ -1,12 +1,12 @@
 ﻿﻿<!DOCTYPE html>
 @{
     var html_attributes = ViewBag.HTMLAttributes != null ? ViewBag.HTMLAttributes : "";
-    var html_class = ViewBag.HTMLClass != null ? ViewBag.HTMLClass : "";
+    var html_class = "set-nav-dark";
 
     var body_attributes = ViewBag.BodyAttributes ?? "";
     var body_class = ViewBag.BodyClass ?? "";
 }
-<html lang="en" @html_attributes class="@html_class">
+<html lang="en" @html_attributes class="set-nav-dark">
 
 <head>
     @await Html.PartialAsync("~/Pages/Shared/Partials/_TitleMeta.cshtml")

@@ -1,0 +1,204 @@
+﻿@page "/"
+@model Manatalol.App.Pages.Candidates.IndexModel
+
+@{
+    ViewBag.Title = "Index";
+}
+
+<div class="main-content">
+    <div class="d-flex justify-content-end">
+        <button class="btn btn-md btn-primary" type="button">
+            <span class="fal fa-plus me-1"></span>
+            Create candidate
+        </button>
+    </div>
+    <div class="row mt-6">
+        <div class="col-lg-12">
+            <table class="st-table table table-striped table-hover st-responsive" id="myTable">
+                <thead>
+                    <tr>
+                        <th>Candidate Name</th>
+                        <th>Location</th>
+                        <th>Function</th>
+                        <th>Product Owner</th>
+                        <th>Source</th>
+                        <th>Note</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><img src="@Url.Content("~/img/demo/avatars/avatar-m.png")" class="ma-img" /> AAbir Ammar</td>
+                        <td>Paris</td>
+                        <td>Dev .net</td>
+                        <td>Noémie</td>
+                        <td>Linkedin</td>
+                        <td>1</td>
+                        <td>
+                            <a href="/details/5" class="btn btn-sm btn-outline-secondary" data-action="view-candidate">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
+                                    <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"></path>
+                                    <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"></path>
+                                </svg>
+                            </a>
+                        </td>
+
+                    </tr>
+                    <tr>
+                        <td><img src="@Url.Content("~/img/demo/avatars/avatar-m.png")" class="ma-img" /> AAbir Ammar</td>
+                        <td>Paris</td>
+                        <td>Dev .net</td>
+                        <td>Noémie</td>
+                        <td>Linkedin</td>
+                        <td>1</td>
+                        <td>
+                            <a href="/details/5" class="btn btn-sm btn-outline-secondary" data-action="view-candidate">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
+                                    <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"></path>
+                                    <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"></path>
+                                </svg>
+                            </a>
+                        </td>
+
+                    </tr>
+                    <tr>
+                        <td><img src="@Url.Content("~/img/demo/avatars/avatar-m.png")" class="ma-img" /> AAbir Ammar</td>
+                        <td>Paris</td>
+                        <td>Dev .net</td>
+                        <td>Noémie</td>
+                        <td>Linkedin</td>
+                        <td>1</td>
+                        <td>
+                            <a href="#" class="btn btn-sm btn-outline-secondary" data-action="view-candidate">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
+                                    <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"></path>
+                                    <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"></path>
+                                </svg>
+                            </a>
+                        </td>
+
+                    </tr>
+                    <tr>
+                        <td><img src="@Url.Content("~/img/demo/avatars/avatar-m.png")" class="ma-img" /> AAbir Ammar</td>
+                        <td>Paris</td>
+                        <td>Dev .net</td>
+                        <td>Noémie</td>
+                        <td>Linkedin</td>
+                        <td>1</td>
+                        <td>
+                            <a href="#" class="btn btn-sm btn-outline-secondary" data-action="view-candidate">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
+                                    <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"></path>
+                                    <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"></path>
+                                </svg>
+                            </a>
+                        </td>
+
+                    </tr>
+                    <tr>
+                        <td><img src="@Url.Content("~/img/demo/avatars/avatar-m.png")" class="ma-img" /> AAbir Ammar</td>
+                        <td>Paris</td>
+                        <td>Dev .net</td>
+                        <td>Noémie</td>
+                        <td>Linkedin</td>
+                        <td>1</td>
+                        <td>
+                            <a href="#" class="btn btn-sm btn-outline-secondary" data-action="view-candidate">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
+                                    <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"></path>
+                                    <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"></path>
+                                </svg>
+                            </a>
+                        </td>
+
+                    </tr>
+                    <tr>
+                        <td><img src="@Url.Content("~/img/demo/avatars/avatar-m.png")" class="ma-img" /> AAbir Ammar</td>
+                        <td>Paris</td>
+                        <td>Dev .net</td>
+                        <td>Noémie</td>
+                        <td>Linkedin</td>
+                        <td>1</td>
+                        <td>
+                            <a href="#" class="btn btn-sm btn-outline-secondary" data-action="view-candidate">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
+                                    <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"></path>
+                                    <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"></path>
+                                </svg>
+                            </a>
+                        </td>
+
+                    </tr>
+                    <tr>
+                        <td><img src="@Url.Content("~/img/demo/avatars/avatar-m.png")" class="ma-img" /> AAbir Ammar</td>
+                        <td>Paris</td>
+                        <td>Dev .net</td>
+                        <td>Noémie</td>
+                        <td>Linkedin</td>
+                        <td>1</td>
+                        <td>
+                            <a href="#" class="btn btn-sm btn-outline-secondary" data-action="view-candidate">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
+                                    <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"></path>
+                                    <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"></path>
+                                </svg>
+                            </a>
+                        </td>
+
+                    </tr>
+                    <tr>
+                        <td><img src="@Url.Content("~/img/demo/avatars/avatar-m.png")" class="ma-img" /> AAbir Ammar</td>
+                        <td>Paris</td>
+                        <td>Dev .net</td>
+                        <td>Noémie</td>
+                        <td>Linkedin</td>
+                        <td>1</td>
+                        <td>
+                            <a href="#" class="btn btn-sm btn-outline-secondary" data-action="view-candidate">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
+                                    <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"></path>
+                                    <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"></path>
+                                </svg>
+                            </a>
+                        </td>
+
+                    </tr>
+                    <tr>
+                        <td><img src="@Url.Content("~/img/demo/avatars/avatar-m.png")" class="ma-img" /> AAbir Ammar</td>
+                        <td>Paris</td>
+                        <td>Dev .net</td>
+                        <td>Noémie</td>
+                        <td>Linkedin</td>
+                        <td>1</td>
+                        <td>
+                            <a href="#" class="btn btn-sm btn-outline-secondary" data-action="view-candidate">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
+                                    <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"></path>
+                                    <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"></path>
+                                </svg>
+                            </a>
+                        </td>
+
+                    </tr>
+                    <tr>
+                        <td><img src="@Url.Content("~/img/demo/avatars/avatar-m.png")" class="ma-img" /> AAbir Ammar</td>
+                        <td>Paris</td>
+                        <td>Dev .net</td>
+                        <td>Noémie</td>
+                        <td>Linkedin</td>
+                        <td>1</td>
+                        <td>
+                            <a href="#" class="btn btn-sm btn-outline-secondary" data-action="view-candidate">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
+                                    <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"></path>
+                                    <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"></path>
+                                </svg>
+                            </a>
+                        </td>
+
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

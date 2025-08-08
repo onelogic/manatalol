@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
@@ -53,21 +53,6 @@
     <Folder Include="wwwroot\scripts\optional\smartTables\" />
     <Folder Include="wwwroot\scripts\pages\" />
     <Folder Include="wwwroot\scripts\thirdparty\" />
-    <Folder Include="wwwroot\scss\app\" />
-    <Folder Include="wwwroot\scss\themes\aurora\" />
-    <Folder Include="wwwroot\scss\themes\bootstrap\forms\" />
-    <Folder Include="wwwroot\scss\themes\bootstrap\helpers\" />
-    <Folder Include="wwwroot\scss\themes\bootstrap\mixins\" />
-    <Folder Include="wwwroot\scss\themes\bootstrap\utilities\" />
-    <Folder Include="wwwroot\scss\themes\bootstrap\vendor\" />
-    <Folder Include="wwwroot\scss\themes\earth\" />
-    <Folder Include="wwwroot\scss\themes\flare\" />
-    <Folder Include="wwwroot\scss\themes\lunar\" />
-    <Folder Include="wwwroot\scss\themes\nebula\" />
-    <Folder Include="wwwroot\scss\themes\night\" />
-    <Folder Include="wwwroot\scss\themes\olive\" />
-    <Folder Include="wwwroot\scss\themes\solar\" />
-    <Folder Include="wwwroot\scss\themes\storm\" />
     <Folder Include="wwwroot\webfonts\fontawesome\fonts\" />
     <Folder Include="wwwroot\webfonts\smartadmin\fonts\" />
   </ItemGroup>

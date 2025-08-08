@@ -1,4 +1,4 @@
-@charset "UTF-8";
+﻿@charset "UTF-8";
 /*!
  * Bootstrap  v5.3.7 (https://getbootstrap.com/)
  * Copyright 2011-2025 The Bootstrap Authors
@@ -29161,4 +29161,11 @@ html.profile-edit-mode .profile-edit-mode {
     -webkit-transform: scale(1);
             transform: scale(1);
   }
+}
+
+.ma-img {
+    object-fit: cover;
+    height: 25px;
+    width: 25px;
+    border-radius: 50%;
 }

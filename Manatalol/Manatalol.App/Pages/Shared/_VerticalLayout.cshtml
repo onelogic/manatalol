@@ -2,7 +2,7 @@
 
 @{
     var html_attributes = ViewBag.HTMLAttributes != null ? ViewBag.HTMLAttributes : "";
-    var html_class = ViewBag.HTMLClass != null ? ViewBag.HTMLClass : "";
+    var html_class = ViewBag.HTMLClass != null ? ViewBag.HTMLClass : "set-nav-dark";
 }
 
 <html lang="en" class="@html_class" @html_attributes>
@@ -32,8 +32,6 @@
                 @RenderSection("modelBlock", required: false)
 
             </div>
-
-            @await Html.PartialAsync("~/Pages/Shared/Partials/_Footer.cshtml")
 
         </main>
 

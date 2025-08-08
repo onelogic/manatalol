@@ -1,4 +1,5 @@
 ﻿using Manatalol.App.Data;
+using Manatalol.App.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,7 +9,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Ajouter Identity
-builder.Services.AddDefaultIdentity<IdentityUser>(options =>
+builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 {
     options.SignIn.RequireConfirmedAccount = false;
 })
@@ -26,6 +27,8 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 // Add services to the container.
 builder.Services.AddRazorPages();
+builder.Services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, CustomUserClaimsPrincipalFactory>();
+
 
 var app = builder.Build();
 
