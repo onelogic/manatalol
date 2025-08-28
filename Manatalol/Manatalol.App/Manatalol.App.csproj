@@ -61,4 +61,9 @@
     <None Include="Manatalol.App.sln" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Manatalol.Application\Manatalol.Application.csproj" />
+    <ProjectReference Include="..\Manatalol.Infrastructure\Manatalol.Infrastructure.csproj" />
+  </ItemGroup>
+
 </Project>
