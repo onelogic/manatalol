@@ -36,10 +36,6 @@ builder.Services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, CustomU
 
 var app = builder.Build();
 
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Dashboard}/{action=Index}/{id?}");
-
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {

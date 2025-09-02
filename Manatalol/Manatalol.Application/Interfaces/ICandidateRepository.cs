@@ -12,5 +12,6 @@ namespace Manatalol.Application.Interfaces
             int pageSize,
             string? sortBy = null,
             string? sortDirection = null);
+        Task<Candidate?> GetCandidateByReference(string reference);
     }
 }

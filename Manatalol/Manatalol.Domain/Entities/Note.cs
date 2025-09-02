@@ -9,6 +9,6 @@
         public Guid CandidateId { get; set; }
         public Candidate Candidate { get; set; }
 
-        public string CreatedById { get; set; }
+        public string CreatedBy { get; set; }
     }
 }

@@ -11,12 +11,13 @@ namespace Manatalol.Infrastructure.Data
             builder.HasKey(c => c.Id);
             builder.Property(c => c.FirstName).IsRequired();
             builder.Property(c => c.LastName).IsRequired();
+            builder.Property(c => c.Reference).IsRequired();
             builder.Property(c => c.CurrentCompany);
             builder.Property(c => c.Location);
             builder.Property(c => c.Function);
             builder.Property(c => c.AddedBy);
             builder.Property(c => c.Source);
-            builder.Property(c => c.CreatedById);
+            builder.Property(c => c.CreatedBy);
             builder.HasMany(c => c.Experiences)
                 .WithOne(e => e.Candidate)
                 .HasForeignKey(e => e.CandidateId)
@@ -26,6 +27,9 @@ namespace Manatalol.Infrastructure.Data
                 .WithOne(n => n.Candidate)
                 .HasForeignKey(n => n.CandidateId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+
+            builder.HasIndex(x => x.Reference).IsUnique();
         }
     }
 }

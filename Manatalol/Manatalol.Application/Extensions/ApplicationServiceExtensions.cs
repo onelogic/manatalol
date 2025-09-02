@@ -10,6 +10,7 @@ namespace Manatalol.Application.Extensions
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
             services.AddScoped<ICandidateService, CandidateService>();
+            services.AddScoped<INoteService, NoteService>();
             return services;
         }
     }

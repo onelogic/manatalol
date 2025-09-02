@@ -10,7 +10,7 @@ namespace Manatalol.Infrastructure.Data
         {
             builder.HasKey(n => n.Id);
             builder.Property(n => n.Content);
-            builder.Property(n => n.CreatedById);
+            builder.Property(n => n.CreatedBy);
             builder.Property(n => n.CreatedAt);
         }
     }

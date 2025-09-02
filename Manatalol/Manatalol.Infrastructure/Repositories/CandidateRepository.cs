@@ -23,7 +23,7 @@ namespace Manatalol.Infrastructure.Repositories
            string? sortBy = null,
            string? sortDirection = null)
         {
-            var query = _context.Candidates.AsQueryable();
+            var query = _context.Candidates.Include(n=>n.Notes).AsQueryable();
             query = SearchCandidatesAsync(query, candidateFilter);
             if (!string.IsNullOrEmpty(sortBy))
             {
@@ -48,6 +48,11 @@ namespace Manatalol.Infrastructure.Repositories
                 .ToListAsync();
 
             return new PageResult<Candidate>(candidatePaged, totalItems, pageNumber, pageSize);
+        }
+
+        public Task<Candidate?> GetCandidateByReference(string reference)
+        {
+            return _context.Candidates.FirstOrDefaultAsync(c => c.Reference == reference);
         }
 
         private IQueryable<Candidate> SearchCandidatesAsync(IQueryable<Candidate> query,

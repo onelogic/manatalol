@@ -12,11 +12,14 @@ namespace Manatalol.Application.Mappers
             {
                 LastName = request.LastName,
                 FirstName = request.FirstName,
+                Reference = request.Reference,
                 Gender = request.Gender,
                 CurrentCompany = request.CurrentCompany,
                 Location = request.Location,
                 Function = request.Function,
-                Source = request.Source
+                Source = request.Source,
+                NotesCount = request.Notes.Count,
+                CreatedBy = request.CreatedBy
             };
         }
     }

@@ -1,7 +1,6 @@
 using Manatalol.Application.Common;
 using Manatalol.Application.DTO.Candidates;
 using Manatalol.Application.Interfaces;
-using Manatalol.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -46,10 +45,7 @@ namespace Manatalol.App.Pages.Candidates
         }
         public async Task<JsonResult> OnGetSearchAsync(string? search, int pageNumber = 0)
         {
-            var filter = new CandidateFilter
-            {
-                Search = search
-            };
+            var filter = new CandidateFilter { Search = search };
 
             var candidates = await _candidateService.GetCandidatesAsync(
                 filter,
