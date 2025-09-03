@@ -1,14 +1,12 @@
 ﻿namespace Manatalol.Domain.Entities
 {
-    public class Experience
+    public class Education
     {
         public Guid Id { get; set; }
-
-        public string CompanyName { get; set; } = string.Empty;
-        public string Position { get; set; } = string.Empty;
+        public string School { get; set; } = string.Empty;
+        public string Degree { get; set; } = string.Empty;
         public DateTime StartDate { get; set; }
         public DateTime? EndDate { get; set; }
-        public bool IsCurrent { get; set; }
         public string Description { get; set; } = string.Empty;
 
         public Guid CandidateId { get; set; }

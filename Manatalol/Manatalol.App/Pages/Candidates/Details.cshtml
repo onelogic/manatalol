@@ -1,118 +1,13 @@
 ﻿@page "/details/{CandidateReference}"
 @model Manatalol.App.Pages.Candidates.DetailsModel
 @{
+    var candidate = Model.CandidateDetails;
 }
 
 
 <div class="main-content layout-trimmed profile-page position-relative">
-    <!-- Edit Profile Modal -->
-    <div aria-hidden="true" aria-labelledby="editProfileModalLabel" class="modal fade" id="editProfileModal"
-         tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="editProfileModalLabel">Edit Profile</h5>
-                    <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
-                </div>
-                <div class="modal-body">
-                    <form class="needs-validation" novalidate="">
-                        <div class="row mb-g">
-                            <div class="col-md-12">
-                                <h6 class="mb-3 text-muted">Personal Information</h6>
-                                <div class="mb-3">
-                                    <label class="form-label" for="fullName">
-                                        Full Name <span class="text-danger">*</span>
-                                    </label>
-                                    <input class="form-control" id="fullName" required="" type="text"
-                                           value="John Doe" />
-                                    <div class="invalid-feedback">
-                                        Please provide your full name.
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label" for="profession">
-                                        Profession <span class="text-danger">*</span>
-                                    </label>
-                                    <input class="form-control" id="profession" required="" type="text"
-                                           value="Senior Software Engineer at TechCorp" />
-                                    <div class="invalid-feedback">
-                                        Please provide your profession.
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label" for="skills">
-                                        Skills (comma separated)
-                                        <span class="text-danger">*</span>
-                                    </label>
-                                    <input class="form-control" id="skills" required="" type="text"
-                                           value="JavaScript, React, Node.js, UI/UX" />
-                                    <div class="invalid-feedback">
-                                        Please provide at least one
-                                        skill.
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <h6 class="mb-3 text-muted">Contact Information</h6>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label" for="email">Email <span class="text-danger">*</span></label>
-                                <input class="form-control" id="email" required="" type="email"
-                                       value="john.doe@example.com" />
-                                <div class="invalid-feedback">
-                                    Please provide a valid email address.
-                                </div>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label" for="phone">Phone <span class="text-danger">*</span></label>
-                                <input class="form-control" id="phone" required="" type="tel"
-                                       value="+1 (555) 123-4567" />
-                                <div class="invalid-feedback"> Please provide a phone number. </div>
-                            </div>
-                        </div>
-                        <div class="mb-g">
-                            <label class="form-label" for="location">Location <span class="text-danger">*</span></label>
-                            <input class="form-control" id="location" required="" type="text"
-                                   value="San Francisco, CA" />
-                            <div class="invalid-feedback"> Please provide your location. </div>
-                        </div>
-                        <h6 class="mb-3 text-muted">About Me</h6>
-                        <div class="mb-3 mb-g">
-                            <label class="form-label" for="aboutMe">Bio <span class="text-danger">*</span></label>
-                            <textarea class="form-control" id="aboutMe" required=""
-                                      rows="4">Experienced Software Engineer with a demonstrated history of working in the computer software industry. Skilled in JavaScript, React.js, Node.js, and UI/UX Design. Strong engineering professional with a Bachelor's degree focused in Computer Science.</textarea>
-                            <div class="invalid-feedback"> Please provide a bio. </div>
-                        </div>
-                        <h6 class="mb-3 text-muted">Social Media</h6>
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label" for="linkedin">LinkedIn</label>
-                                <input class="form-control" id="linkedin" placeholder="LinkedIn profile URL"
-                                       type="url" />
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label" for="github">GitHub</label>
-                                <input class="form-control" id="github" placeholder="GitHub profile URL" type="url" />
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label" for="twitter">Twitter</label>
-                                <input class="form-control" id="twitter" placeholder="Twitter profile URL" type="url" />
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-default" data-bs-dismiss="modal" type="button">Cancel</button>
-                    <button class="btn btn-primary" id="submitProfileForm" type="button">
-                        Save
-                        Changes
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
     <!-- Profile Header Background -->
-    <div class="profile-page-header-underlay bg-info-gradient bg-info-500"></div>
+    <div class="profile-page-header-underlay bg-secondary-gradient bg-secondary"></div>
     <!-- Main Profile Content -->
     <div class="container-xl position-relative">
         <!-- Profile Header Section -->
@@ -121,29 +16,14 @@
                 <!-- Profile Avatar -->
                 <div class="profile-page-header-avatar mb-3 mb-md-0">
                     <div class="position-relative">
-                        <img alt="John Doe" class="rounded-circle border border-3 border-white shadow-2" height="160"
+                        <img alt="" class="rounded-circle border border-3 border-white shadow-2" height="160"
                              src="~/img/demo/avatars/avatar-admin-xl.png" width="160" />
                     </div>
                 </div>
                 <!-- Profile Info -->
                 <div class="profile-page-header-info ms-md-4 text-center text-md-start">
-                    <h1 class="fs-xxl fw-700 mb-2">John Doe</h1>
-                    <p class="text-muted mb-2">Senior Software Engineer at TechCorp</p>
-                    <div class="d-flex flex-wrap gap-2 justify-content-center justify-content-md-start">
-                        <span class="badge bg-primary-100 text-primary">JavaScript</span>
-                        <span class="badge bg-primary-100 text-primary">React</span>
-                        <span class="badge bg-primary-100 text-primary">Node.js</span>
-                        <span class="badge bg-primary-100 text-primary">UI/UX</span>
-                    </div>
-                </div>
-                <!-- Profile Actions -->
-                <div class="profile-page-header-actions ms-md-auto mt-3 mt-md-0 d-flex">
-                    <a class="btn btn-outline-default me-2 d-flex" data-bs-target="#editProfileModal"
-                       data-bs-toggle="modal" href="#">
-                        <svg class="sa-icon me-2 inline-text">
-                            <use href="icons/sprite.svg#edit-3"></use>
-                        </svg> Edit Profile
-                    </a>
+                    <h1 class="fs-xxl fw-700 mb-2">@candidate.FirstName @candidate.LastName</h1>
+                    <p class="text-muted mb-2">@candidate.Function</p>
                 </div>
             </div>
             <!-- Profile Navigation -->
@@ -176,73 +56,37 @@
                     <div class="col-lg-8">
                         <!-- About Me Section -->
                         <div class="panel mb-4">
-                            <div class="panel-hdr">
-                                <h2>About Me</h2>
-                            </div>
                             <div class="panel-container">
                                 <div class="panel-content">
                                     <!-- View Mode -->
                                     <div class="profile-view-mode">
-                                        <p class="mb-4">
-                                            Experienced Software Engineer with a
-                                            demonstrated history of working in the computer software
-                                            industry. Skilled in JavaScript, React.js, Node.js, and
-                                            UI/UX Design. Strong engineering professional with a
-                                            Bachelor's degree focused in Computer Science.
-                                        </p>
                                         <h5 class="mb-3">Contact Information</h5>
                                         <div class="d-flex flex-column gap-2">
-                                            <div class="d-flex align-items-center">
-                                                <svg class="sa-icon me-2">
-                                                    <use href="icons/sprite.svg#mail"></use>
-                                                </svg>
-                                                john.doe@example.com
-                                            </div>
-                                            <div class="d-flex align-items-center">
-                                                <svg class="sa-icon me-2">
-                                                    <use href="icons/sprite.svg#phone"></use>
-                                                </svg>
-                                                +1 (555) 123-4567
-                                            </div>
+                                            @if (candidate.Email != null)
+                                            {
+                                                <div class="d-flex align-items-center">
+                                                    <svg class="sa-icon me-2">
+                                                        <use href="icons/sprite.svg#mail"></use>
+                                                    </svg>
+                                                    @candidate.Email
+                                                </div>
+                                            }
+                                            @if (candidate.PhoneNumber != null)
+                                            {
+                                                <div class="d-flex align-items-center">
+                                                    <svg class="sa-icon me-2">
+                                                        <use href="icons/sprite.svg#phone"></use>
+                                                    </svg>
+                                                    @candidate.PhoneNumber
+                                                </div>
+                                            }
                                             <div class="d-flex align-items-center">
                                                 <svg class="sa-icon me-2">
                                                     <use href="icons/sprite.svg#map-pin"></use>
                                                 </svg>
-                                                San Francisco, CA
+                                                @candidate.Location
                                             </div>
                                         </div>
-                                    </div>
-                                    <!-- Edit Mode -->
-                                    <div class="profile-edit-mode d-none">
-                                        <form>
-                                            <div class="mb-3">
-                                                <label class="form-label">About Me</label>
-                                                <textarea class="form-control"
-                                                          rows="4">Experienced Software Engineer with a demonstrated history of working in the computer software industry. Skilled in JavaScript, React.js, Node.js, and UI/UX Design. Strong engineering professional with a Bachelor's degree focused in Computer Science.</textarea>
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label">Email</label>
-                                                <input class="form-control" type="email" value="john.doe@example.com" />
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label">Phone</label>
-                                                <input class="form-control" type="tel" value="+1 (555) 123-4567" />
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label">Location</label>
-                                                <input class="form-control" type="text" value="San Francisco, CA" />
-                                            </div>
-                                            <div class="d-flex gap-2">
-                                                <button class="btn btn-primary" type="submit">
-                                                    Save
-                                                    Changes
-                                                </button>
-                                                <button class="btn btn-default" data-action="toggle"
-                                                        data-class="profile-edit-mode" type="button">
-                                                    Cancel
-                                                </button>
-                                            </div>
-                                        </form>
                                     </div>
                                 </div>
                             </div>
@@ -255,33 +99,21 @@
                             <div class="panel-container">
                                 <div class="panel-content">
                                     <div class="timeline">
-                                        <div class="timeline-item">
-                                            <div class="timeline-marker bg-primary-500"></div>
-                                            <div class="timeline-content">
-                                                <h5 class="mb-2">Senior Software Engineer</h5>
-                                                <p class="text-muted mb-2">
-                                                    TechCorp • 2020 - Present
-                                                </p>
-                                                <p>
-                                                    Lead developer for enterprise web applications
-                                                    using React and Node.js.
-                                                </p>
+                                        @foreach (var exp in candidate.Experiences?.OrderByDescending(s=>s.StartDate))
+                                        {
+                                            <div class="timeline-item">
+                                                <div class="timeline-marker bg-primary-500"></div>
+                                                <div class="timeline-content">
+                                                    <h5 class="mb-2">@exp.Position</h5>
+                                                    <p class="text-muted mb-2">
+                                                        @exp.CompanyName • @exp.StartDate.ToString("MMMM yyyy") - @(exp.IsCurrent ? "Present" : exp.EndDate?.ToString("MMMM yyyy"))
+                                                    </p>
+                                                    <p>
+                                                        @exp.Description
+                                                    </p>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div class="timeline-item">
-                                            <div class="timeline-marker bg-success-500"></div>
-                                            <div class="timeline-content">
-                                                <h5 class="mb-2">Software Engineer</h5>
-                                                <p class="text-muted mb-2">
-                                                    InnovateTech • 2018 -
-                                                    2020
-                                                </p>
-                                                <p>
-                                                    Developed and maintained multiple client-facing
-                                                    applications.
-                                                </p>
-                                            </div>
-                                        </div>
+                                        }
                                     </div>
                                 </div>
                             </div>
@@ -296,14 +128,10 @@
                             <div class="panel-container">
                                 <div class="panel-content">
                                     <div class="d-flex flex-wrap gap-2">
-                                        <span class="badge bg-primary">JavaScript</span>
-                                        <span class="badge bg-primary">React.js</span>
-                                        <span class="badge bg-primary">Node.js</span>
-                                        <span class="badge bg-primary">TypeScript</span>
-                                        <span class="badge bg-primary">HTML5</span>
-                                        <span class="badge bg-primary">CSS3</span>
-                                        <span class="badge bg-primary">Git</span>
-                                        <span class="badge bg-primary">AWS</span>
+                                        @foreach (var skill in candidate.Skills)
+                                        {
+                                            <span class="badge bg-primary">@skill.Name</span>
+                                        }
                                     </div>
                                 </div>
                             </div>
@@ -316,17 +144,20 @@
                             <div class="panel-container">
                                 <div class="panel-content">
                                     <div class="timeline">
-                                        <div class="timeline-item">
-                                            <div class="timeline-marker bg-fusion-500"></div>
-                                            <div class="timeline-content">
-                                                <h5 class="mb-2">BS in Computer Science</h5>
-                                                <p class="text-muted mb-2">
-                                                    University of Technology
-                                                    • 2014 - 2018
-                                                </p>
-                                                <p>Major in Software Engineering</p>
+                                        @foreach (var education in candidate.Educations?.OrderByDescending(s => s.StartDate))
+                                        {
+                                            <div class="timeline-item">
+                                                <div class="timeline-marker bg-fusion-500"></div>
+                                                <div class="timeline-content">
+                                                    <h5 class="mb-2">@education.Degree</h5>
+                                                    <p class="text-muted mb-2">
+                                                        @education.School
+                                                        • @education.StartDate.Year - @education.EndDate?.Year
+                                                    </p>
+                                                    <p>@education.Description</p>
+                                                </div>
                                             </div>
-                                        </div>
+                                        }
                                     </div>
                                 </div>
                             </div>

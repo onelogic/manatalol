@@ -30,5 +30,11 @@ namespace Manatalol.Application.Services
                 pagedExpenses.PageNumber,
                 pagedExpenses.PageSize);
         }
+
+        public async Task<CandidateDto?> GetCandidateDetails(string reference)
+        {
+            var candidate = await _candidateRepository.GetCandidateDetails(reference);
+            return candidate == null ? null : candidate.ToDto();
+        }
     }
 }

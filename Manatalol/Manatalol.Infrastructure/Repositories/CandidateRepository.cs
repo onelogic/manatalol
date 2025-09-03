@@ -50,9 +50,18 @@ namespace Manatalol.Infrastructure.Repositories
             return new PageResult<Candidate>(candidatePaged, totalItems, pageNumber, pageSize);
         }
 
-        public Task<Candidate?> GetCandidateByReference(string reference)
+        public async Task<Candidate?> GetCandidateDetails(string reference)
         {
-            return _context.Candidates.FirstOrDefaultAsync(c => c.Reference == reference);
+            return await _context.Candidates
+                .Include(c => c.Educations)
+                .Include(c => c.Experiences)
+                .Include(c => c.Skills)
+                .FirstOrDefaultAsync(c => c.Reference == reference);
+        }
+
+        public async Task<Candidate?> GetCandidateByReference(string reference)
+        {
+            return await _context.Candidates.FirstOrDefaultAsync(c => c.Reference == reference);
         }
 
         private IQueryable<Candidate> SearchCandidatesAsync(IQueryable<Candidate> query,

@@ -1,5 +1,6 @@
 using Manatalol.App.Data;
 using Manatalol.Application.Common;
+using Manatalol.Application.DTO.Candidates;
 using Manatalol.Application.DTO.Notes;
 using Manatalol.Application.Interfaces;
 using Microsoft.AspNetCore.Identity;
@@ -10,15 +11,21 @@ namespace Manatalol.App.Pages.Candidates
 {
     public class DetailsModel : PageModel
     {
+        private readonly ICandidateService _candidateService;
         private readonly INoteService _noteService;
         private readonly UserManager<ApplicationUser> _userManager;
 
 
-        public DetailsModel(INoteService noteService, UserManager<ApplicationUser> userManager)
+        public DetailsModel(ICandidateService candidateService,
+            INoteService noteService,
+            UserManager<ApplicationUser> userManager)
         {
+            _candidateService = candidateService;
             _noteService = noteService;
             _userManager = userManager;
         }
+
+        public CandidateDto? CandidateDetails { get; set; }
 
         public PageResult<NoteDto> Notes { get; set; }
 
@@ -30,8 +37,13 @@ namespace Manatalol.App.Pages.Candidates
 
         public int PageSize { get; set; } = 5;
 
-        public async Task OnGetAsync()
+        public async Task<IActionResult> OnGetAsync()
         {
+            CandidateDetails = await _candidateService.GetCandidateDetails(CandidateReference);
+            if (CandidateDetails == null)
+            {
+                return RedirectToPage("/Error/Error404");
+            }
 
             Notes = await _noteService.GetNotesByCandidatesAsync(
                 CandidateReference,
@@ -39,6 +51,7 @@ namespace Manatalol.App.Pages.Candidates
                 PageSize,
                 sortDirection: "asc"
             );
+            return Page();
         }
 
         [BindProperty]

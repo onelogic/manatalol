@@ -1,17 +1,13 @@
-﻿namespace Manatalol.Domain.Entities
+﻿namespace Manatalol.Application.DTO.Experiences
 {
-    public class Experience
+    public record ExperienceDto
     {
-        public Guid Id { get; set; }
-
         public string CompanyName { get; set; } = string.Empty;
         public string Position { get; set; } = string.Empty;
         public DateTime StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public bool IsCurrent { get; set; }
-        public string Description { get; set; } = string.Empty;
 
-        public Guid CandidateId { get; set; }
-        public Candidate Candidate { get; set; }
+        public string Description { get; set; } = string.Empty;
     }
 }
