@@ -20,6 +20,7 @@ namespace Manatalol.Application.DTO.Candidates
         public string CreatedBy { get; set; } = string.Empty;
         public SourceType Source { get; set; }
         public int NotesCount { get; set; }
+        public DateTime CreatedAt { get; set; }
         public List<ExperienceDto>? Experiences { get; set; }
         public List<SkillDto>? Skills { get; set; }
         public List<EducationDto>? Educations { get; set; }

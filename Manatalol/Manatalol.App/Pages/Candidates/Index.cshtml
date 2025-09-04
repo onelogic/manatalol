@@ -91,7 +91,7 @@
                         </a>
                     </div>
                     <div class="col-6 p-3">
-                        <a href="" class="border rounded p-3 d-flex flex-column align-items-center justify-content-center text-center" style="height:120px">
+                        <a href="#" data-bs-toggle="modal" data-bs-target="#uploadModal" class="border rounded p-3 d-flex flex-column align-items-center justify-content-center text-center" style="height:120px">
                             <div style="font-size: 2.1rem">
                                 <div class="stack-icon">
                                     <div class="icon-layers"><i class="sa sa-base-7 stack-3x text-primary"></i></div>
@@ -115,6 +115,26 @@
                 </div>
             </div>
         </div>
+    </div>
+</div>
+<!-- Inclure le modal d’upload (partial view) -->
+<div class="modal fade" id="uploadModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="post" enctype="multipart/form-data" asp-page-handler="Upload">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Upload CV PDF</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input asp-for="PdfFiles" type="file" class="form-control" accept="application/pdf" multiple />
+                    <span asp-validation-for="PdfFiles" class="text-danger"></span>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Upload</button>
+                </div>
+            </div>
+        </form>
     </div>
 </div>
 

@@ -23,7 +23,7 @@ namespace Manatalol.Infrastructure.Repositories
            string? sortBy = null,
            string? sortDirection = null)
         {
-            var query = _context.Candidates.Include(n=>n.Notes).AsQueryable();
+            var query = _context.Candidates.Include(n => n.Notes).AsQueryable();
             query = SearchCandidatesAsync(query, candidateFilter);
             if (!string.IsNullOrEmpty(sortBy))
             {
@@ -62,6 +62,12 @@ namespace Manatalol.Infrastructure.Repositories
         public async Task<Candidate?> GetCandidateByReference(string reference)
         {
             return await _context.Candidates.FirstOrDefaultAsync(c => c.Reference == reference);
+        }
+
+        public async Task CreateCandidate(Candidate candidate)
+        {
+            _context.Candidates.Add(candidate);
+            await _context.SaveChangesAsync();
         }
 
         private IQueryable<Candidate> SearchCandidatesAsync(IQueryable<Candidate> query,

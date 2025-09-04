@@ -1,7 +1,9 @@
+using Manatalol.App.Data;
 using Manatalol.Application.Common;
 using Manatalol.Application.DTO.Candidates;
 using Manatalol.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -12,10 +14,12 @@ namespace Manatalol.App.Pages.Candidates
     public class IndexModel : PageModel
     {
         private readonly ICandidateService _candidateService;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public IndexModel(ICandidateService candidateService)
+        public IndexModel(ICandidateService candidateService, UserManager<ApplicationUser> userManager)
         {
             _candidateService = candidateService;
+            _userManager = userManager;
         }
 
         public PageResult<CandidateDto> Candidates { get; set; }
@@ -57,5 +61,33 @@ namespace Manatalol.App.Pages.Candidates
 
             return new JsonResult(candidates);
         }
+
+        [BindProperty]
+        public List<IFormFile> PdfFiles { get; set; }
+        public async Task<IActionResult> OnPostUploadAsync()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            var reference = "";
+            if (PdfFiles == null || PdfFiles.Count == 0)
+            {
+                ModelState.AddModelError("", "Veuillez sélectionner au moins un fichier PDF.");
+                return Page();
+            }
+
+            foreach (var file in PdfFiles)
+            {
+                if (file.Length > 0)
+                {
+                    using var stream = new MemoryStream();
+                    await file.CopyToAsync(stream);
+                    var pdfBytes = stream.ToArray();
+
+                    reference = await _candidateService.SaveCandidateViaUpload(pdfBytes, user.FullName);
+                }
+            }
+
+            return RedirectToPage("/Candidates/Details", new { CandidateReference = reference });
+        }
+
     }
 }

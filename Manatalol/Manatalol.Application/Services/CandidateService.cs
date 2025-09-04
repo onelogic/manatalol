@@ -1,7 +1,9 @@
 ﻿using Manatalol.Application.Common;
 using Manatalol.Application.DTO.Candidates;
+using Manatalol.Application.Helpers;
 using Manatalol.Application.Interfaces;
 using Manatalol.Application.Mappers;
+using Manatalol.Domain.Entities;
 
 namespace Manatalol.Application.Services
 {
@@ -35,6 +37,24 @@ namespace Manatalol.Application.Services
         {
             var candidate = await _candidateRepository.GetCandidateDetails(reference);
             return candidate == null ? null : candidate.ToDto();
+        }
+
+        public async Task<string> SaveCandidateViaUpload(byte[] pdfBytes, string createdBy)
+        {
+            var candidate = ExtractCandidateDataFromPdf(pdfBytes, createdBy);
+            await _candidateRepository.CreateCandidate(candidate);
+            return candidate.Reference;
+        }
+
+        private Candidate ExtractCandidateDataFromPdf(byte[] pdfBytes, string createdBy)
+        {
+            string textContent = PdfHelper.ExtractText(pdfBytes);
+            var candidate = PdfParser.ExtractCandidate(textContent);
+            candidate.Reference = candidate.FirstName.ToLower() + "-" + candidate.LastName.ToLower() + "-" + new Random().Next(0, 51);
+            candidate.CreatedBy = createdBy;
+            candidate.Source = Domain.Enums.SourceType.File;
+            candidate.CreatedAt = DateTime.UtcNow;
+            return candidate;
         }
     }
 }
