@@ -99,7 +99,7 @@
                             <div class="panel-container">
                                 <div class="panel-content">
                                     <div class="timeline">
-                                        @foreach (var exp in candidate.Experiences?.OrderByDescending(s=>s.StartDate))
+                                        @foreach (var exp in candidate.Experiences?.OrderByDescending(s => s.StartDate))
                                         {
                                             <div class="timeline-item">
                                                 <div class="timeline-marker bg-primary-500"></div>
@@ -197,39 +197,35 @@
                                                 </div>
                                             </form>
                                         </div>
-                                        @foreach (var note in Model.Notes.Items)
+                                        @if (!Model.CandidateDetails.Notes.Any())
                                         {
-                                            <div class="pb-4">
-                                                <div class="d-flex align-items-center mb-3">
-                                                    <img alt="@note.CreatedBy"
-                                                         class="profile-image profile-image-md rounded-circle me-2"
-                                                         src="~/img/demo/avatars/avatar-admin.png" />
-                                                    <div>
-                                                        <h6 class="mb-0">@note.CreatedBy</h6>
-                                                        <small class="text-muted">
-                                                            @note.CreatedAt.ToString("MMMM dd, yyyy - HH:mm")
-                                                        </small>
-                                                    </div>
-                                                </div>
-                                                <p class="mb-3">
-                                                    @note.Content
-                                                </p>
+                                            <div class="text-center text-muted py-4">
+                                                No notes available.
                                             </div>
                                         }
-
+                                        <div id="myTable">
+                                            @foreach (var note in Model.CandidateDetails.Notes.OrderByDescending(c => c.CreatedAt))
+                                            {
+                                                <div class="pb-4 note-item">
+                                                    <div class="d-flex align-items-center mb-3">
+                                                        <img alt="@note.CreatedBy"
+                                                             class="profile-image profile-image-md rounded-circle me-2"
+                                                             src="~/img/demo/avatars/avatar-admin.png" />
+                                                        <div>
+                                                            <h6 class="mb-0">@note.CreatedBy</h6>
+                                                            <small class="text-muted">
+                                                                @note.CreatedAt.ToString("MMMM dd, yyyy - HH:mm")
+                                                            </small>
+                                                        </div>
+                                                    </div>
+                                                    <p class="mb-3">
+                                                        @note.Content
+                                                    </p>
+                                                </div>
+                                            }
+                                        </div>
                                         <!-- Pagination -->
-                                        <nav class="d-flex justify-content-end">
-                                            <ul class="pagination">
-                                                @for (int i = 0; i < Math.Ceiling((double)Model.Notes.TotalItems / Model.Notes.PageSize); i++)
-                                                {
-                                                    <li class="page-item @(i == Model.Notes.PageNumber ? "active" : "")">
-                                                        <a class="page-link" asp-page="./Details" asp-route-PageNumber="@i">
-                                                            @(i + 1)
-                                                        </a>
-                                                    </li>
-                                                }
-                                            </ul>
-                                        </nav>
+                                        <div id="pagination" class="mb-3 d-flex justify-content-end"></div>
                                     </div>
                                 </div>
                             </div>
@@ -244,4 +240,39 @@
 @section scripts
 {
     <script src="~/scripts/pages/profile.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const itemsPerPage = 5; // Nombre de notes par page
+            const notes = document.querySelectorAll("#myTable .note-item");
+            const totalPages = Math.ceil(notes.length / itemsPerPage);
+            const pagination = document.getElementById("pagination");
+
+            function showPage(page) {
+                const start = (page - 1) * itemsPerPage;
+                const end = start + itemsPerPage;
+
+                notes.forEach((note, index) => {
+                    note.style.display = (index >= start && index < end) ? "block" : "none";
+                });
+
+                document.querySelectorAll("#pagination button").forEach((btn, idx) => {
+                    btn.classList.toggle("btn-primary", idx + 1 === page);
+                    btn.classList.toggle("btn-outline-primary", idx + 1 !== page);
+                });
+            }
+
+            for (let i = 1; i <= totalPages; i++) {
+                const btn = document.createElement("button");
+                btn.textContent = i;
+                btn.className = "btn btn-sm btn-outline-primary me-1";
+                btn.addEventListener("click", () => showPage(i));
+                pagination.appendChild(btn);
+            }
+
+            if (totalPages > 0) {
+                showPage(1);
+            }
+        });
+    </script>
 }

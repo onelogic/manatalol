@@ -13,6 +13,7 @@ namespace Manatalol.Application.Interfaces
          string? sortDirection = null);
 
         Task<CandidateDto?> GetCandidateDetails(string reference);
+        Task<string> CreateCandidateViaLinkedinUrl(string url, string createdBy);
         Task<string> SaveCandidateViaUpload(byte[] pdfBytes, string createdBy);
     }
 }

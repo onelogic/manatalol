@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Manatalol.Application.DTO.Notes
+﻿namespace Manatalol.Application.DTO.Notes
 {
     public record NoteDto
     {

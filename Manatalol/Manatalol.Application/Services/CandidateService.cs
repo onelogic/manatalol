@@ -10,10 +10,12 @@ namespace Manatalol.Application.Services
     public class CandidateService : ICandidateService
     {
         private readonly ICandidateRepository _candidateRepository;
+        private readonly ILinkedinService _linkedinService;
 
-        public CandidateService(ICandidateRepository candidateRepository)
+        public CandidateService(ICandidateRepository candidateRepository, ILinkedinService linkedinService)
         {
             _candidateRepository = candidateRepository;
+            _linkedinService = linkedinService;
         }
 
         public async Task<PageResult<CandidateDto>> GetCandidatesAsync(
@@ -44,6 +46,12 @@ namespace Manatalol.Application.Services
             var candidate = ExtractCandidateDataFromPdf(pdfBytes, createdBy);
             await _candidateRepository.CreateCandidate(candidate);
             return candidate.Reference;
+        }
+
+        public async Task<string> CreateCandidateViaLinkedinUrl(string url, string createdBy)
+        {
+            var profile = await _linkedinService.GetProfileAsync();
+            return "";
         }
 
         private Candidate ExtractCandidateDataFromPdf(byte[] pdfBytes, string createdBy)

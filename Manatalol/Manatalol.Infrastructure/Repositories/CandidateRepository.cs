@@ -56,6 +56,7 @@ namespace Manatalol.Infrastructure.Repositories
                 .Include(c => c.Educations)
                 .Include(c => c.Experiences)
                 .Include(c => c.Skills)
+                .Include(c => c.Notes)
                 .FirstOrDefaultAsync(c => c.Reference == reference);
         }
 

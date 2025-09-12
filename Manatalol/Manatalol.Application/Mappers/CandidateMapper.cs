@@ -23,7 +23,8 @@ namespace Manatalol.Application.Mappers
                 CreatedBy = request.CreatedBy,
                 Educations = (request.Educations != null) ? request.Educations?.Select(e => e.ToDto()).ToList() : new List<DTO.Educations.EducationDto>(),
                 Experiences = (request.Experiences != null) ? request.Experiences?.Select(e => e.ToDto()).ToList() : new List<DTO.Experiences.ExperienceDto>(),
-                Skills = (request.Skills != null) ? request.Skills?.Select(s => s.ToDto()).ToList() : new List<DTO.Skills.SkillDto>()
+                Skills = (request.Skills != null) ? request.Skills?.Select(s => s.ToDto()).ToList() : new List<DTO.Skills.SkillDto>(),
+                Notes = (request.Notes != null) ? request.Notes?.Select(s => s.ToDto()).ToList() : new List<DTO.Notes.NoteDto>()
             };
         }
     }

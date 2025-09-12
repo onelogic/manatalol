@@ -10,7 +10,6 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 namespace Manatalol.App.Pages.Candidates
 {
     [Authorize]
-
     public class IndexModel : PageModel
     {
         private readonly ICandidateService _candidateService;
@@ -32,6 +31,12 @@ namespace Manatalol.App.Pages.Candidates
 
         public int PageSize { get; set; } = 20;
 
+        [BindProperty(SupportsGet = true)]
+        public string SortBy { get; set; } = "firstname";
+
+        [BindProperty(SupportsGet = true)]
+        public string SortDirection { get; set; } = "asc";
+
         public async Task OnGetAsync()
         {
             var filter = new CandidateFilter
@@ -43,10 +48,11 @@ namespace Manatalol.App.Pages.Candidates
                 filter,
                 PageNumber,
                 PageSize,
-                sortBy: "firstname",
-                sortDirection: "asc"
+                sortBy: SortBy,
+                sortDirection: SortDirection
             );
         }
+
         public async Task<JsonResult> OnGetSearchAsync(string? search, int pageNumber = 0)
         {
             var filter = new CandidateFilter { Search = search };
@@ -55,8 +61,8 @@ namespace Manatalol.App.Pages.Candidates
                 filter,
                 pageNumber,
                 PageSize,
-                sortBy: "firstname",
-                sortDirection: "asc"
+                sortBy: SortBy,
+                sortDirection: SortDirection
             );
 
             return new JsonResult(candidates);
@@ -68,6 +74,7 @@ namespace Manatalol.App.Pages.Candidates
         {
             var user = await _userManager.GetUserAsync(User);
             var reference = "";
+
             if (PdfFiles == null || PdfFiles.Count == 0)
             {
                 ModelState.AddModelError("", "Veuillez sélectionner au moins un fichier PDF.");
@@ -89,5 +96,7 @@ namespace Manatalol.App.Pages.Candidates
             return RedirectToPage("/Candidates/Details", new { CandidateReference = reference });
         }
 
+        [BindProperty]
+        public string LinkedinUrl { get; set; }
     }
 }

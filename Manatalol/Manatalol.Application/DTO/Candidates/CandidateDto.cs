@@ -1,5 +1,6 @@
 ﻿using Manatalol.Application.DTO.Educations;
 using Manatalol.Application.DTO.Experiences;
+using Manatalol.Application.DTO.Notes;
 using Manatalol.Application.DTO.Skills;
 using Manatalol.Domain.Enums;
 
@@ -24,5 +25,6 @@ namespace Manatalol.Application.DTO.Candidates
         public List<ExperienceDto>? Experiences { get; set; }
         public List<SkillDto>? Skills { get; set; }
         public List<EducationDto>? Educations { get; set; }
+        public List<NoteDto>? Notes { get; set; }
     }
 }

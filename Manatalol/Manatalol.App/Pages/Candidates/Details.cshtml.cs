@@ -27,8 +27,6 @@ namespace Manatalol.App.Pages.Candidates
 
         public CandidateDto? CandidateDetails { get; set; }
 
-        public PageResult<NoteDto> Notes { get; set; }
-
         [BindProperty(SupportsGet = true)]
         public string CandidateReference { get; set; }
 
@@ -44,13 +42,6 @@ namespace Manatalol.App.Pages.Candidates
             {
                 return RedirectToPage("/Error/Error404");
             }
-
-            Notes = await _noteService.GetNotesByCandidatesAsync(
-                CandidateReference,
-                PageNumber,
-                PageSize,
-                sortDirection: "asc"
-            );
             return Page();
         }
 

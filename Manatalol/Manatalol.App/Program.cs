@@ -3,7 +3,7 @@ using Manatalol.App.Services;
 using Manatalol.Infrastructure.Extensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Manatalol.Application.Extensions; 
+using Manatalol.Application.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -64,5 +64,7 @@ app.UseAuthorization();
 app.MapStaticAssets();
 app.MapRazorPages()
    .WithStaticAssets();
+
+app.MapControllers();
 
 app.Run();

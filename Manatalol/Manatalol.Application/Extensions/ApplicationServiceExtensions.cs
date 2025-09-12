@@ -9,6 +9,7 @@ namespace Manatalol.Application.Extensions
     {
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
+            services.AddHttpClient<ILinkedinService, LinkedinService>();
             services.AddScoped<ICandidateService, CandidateService>();
             services.AddScoped<INoteService, NoteService>();
             return services;
