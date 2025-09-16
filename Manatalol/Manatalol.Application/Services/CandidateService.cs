@@ -1,5 +1,6 @@
 ﻿using Manatalol.Application.Common;
 using Manatalol.Application.DTO.Candidates;
+using Manatalol.Application.DTO.Skills;
 using Manatalol.Application.Helpers;
 using Manatalol.Application.Interfaces;
 using Manatalol.Application.Mappers;
@@ -41,6 +42,23 @@ namespace Manatalol.Application.Services
             return candidate == null ? null : candidate.ToDto();
         }
 
+        public async Task<string> CreateCandidatViaForm(CandidateInputModel request)
+        {
+            request.Source = Domain.Enums.SourceType.Form;
+            request.Reference = request.FirstName.ToLower() + "-" + request.LastName.ToLower() + "-" + new Random().Next(0, 51);
+            request.Skills = request.SkillsTag?.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => new SkillDto { Name = s.Trim() })
+                .ToList();
+            var candidat = request.ToEntity();
+            var existEmail = await _candidateRepository.CheckExistCandidat(candidat);
+            if (existEmail == true)
+            {
+                throw new Exception("There already exists a candidat with this email address");
+            }
+            await _candidateRepository.CreateCandidate(candidat);
+            return request.Reference;
+        }
+
         public async Task<string> SaveCandidateViaUpload(byte[] pdfBytes, string createdBy)
         {
             var candidate = ExtractCandidateDataFromPdf(pdfBytes, createdBy);
@@ -61,7 +79,6 @@ namespace Manatalol.Application.Services
             candidate.Reference = candidate.FirstName.ToLower() + "-" + candidate.LastName.ToLower() + "-" + new Random().Next(0, 51);
             candidate.CreatedBy = createdBy;
             candidate.Source = Domain.Enums.SourceType.File;
-            candidate.CreatedAt = DateTime.UtcNow;
             return candidate;
         }
     }

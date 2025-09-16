@@ -27,5 +27,27 @@ namespace Manatalol.Application.Mappers
                 Notes = (request.Notes != null) ? request.Notes?.Select(s => s.ToDto()).ToList() : new List<DTO.Notes.NoteDto>()
             };
         }
+        public static Candidate ToEntity(this CandidateInputModel dto)
+        {
+            if (dto == null) return null;
+
+            return new Candidate
+            {
+                LastName = dto.LastName,
+                FirstName = dto.FirstName,
+                Reference = dto.Reference,
+                Gender = dto.Gender,
+                CurrentCompany = dto.CurrentCompany,
+                Location = dto.Location,
+                Function = dto.Function,
+                PhoneNumber = dto.PhoneNumber,
+                Email = dto.Email,
+                Source = dto.Source,
+                CreatedBy = dto.CreatedBy,
+                Educations = (dto.Educations != null) ? dto.Educations.Select(e => e.ToEntity()).ToList() : new List<Education>(),
+                Experiences = (dto.Experiences != null) ? dto.Experiences.Select(e => e.ToEntity()).ToList() : new List<Experience>(),
+                Skills = (dto.Skills != null) ? dto.Skills.Select(s => s.ToEntity()).ToList(): new List<Skill>()
+            };
+        }
     }
 }

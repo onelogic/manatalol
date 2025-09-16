@@ -15,5 +15,16 @@ namespace Manatalol.Application.Mappers
                 StartDate = request.StartDate
             };
         }
+
+        public static Education ToEntity(this EducationDto request)
+        {
+            return new Education
+            {
+                Degree = request.Degree,
+                School = request.School,
+                EndDate = request.EndDate,
+                StartDate = request.StartDate
+            };
+        }
     }
 }

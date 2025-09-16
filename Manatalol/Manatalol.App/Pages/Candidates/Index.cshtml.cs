@@ -29,7 +29,7 @@ namespace Manatalol.App.Pages.Candidates
         [BindProperty(SupportsGet = true)]
         public int PageNumber { get; set; } = 0;
 
-        public int PageSize { get; set; } = 20;
+        public int PageSize { get; set; } = 10;
 
         [BindProperty(SupportsGet = true)]
         public string SortBy { get; set; } = "firstname";
@@ -92,7 +92,6 @@ namespace Manatalol.App.Pages.Candidates
                     reference = await _candidateService.SaveCandidateViaUpload(pdfBytes, user.FullName);
                 }
             }
-
             return RedirectToPage("/Candidates/Details", new { CandidateReference = reference });
         }
 

@@ -60,6 +60,9 @@ namespace Manatalol.Infrastructure.Repositories
                 .FirstOrDefaultAsync(c => c.Reference == reference);
         }
 
+        public async Task<bool?> CheckExistCandidat(Candidate candidate)
+        => ((await _context.Candidates.Where(c => c.Email == candidate.Email).FirstOrDefaultAsync()) != null);
+        
         public async Task<Candidate?> GetCandidateByReference(string reference)
         {
             return await _context.Candidates.FirstOrDefaultAsync(c => c.Reference == reference);
@@ -67,6 +70,7 @@ namespace Manatalol.Infrastructure.Repositories
 
         public async Task CreateCandidate(Candidate candidate)
         {
+            candidate.CreatedAt = DateTime.Now;
             _context.Candidates.Add(candidate);
             await _context.SaveChangesAsync();
         }

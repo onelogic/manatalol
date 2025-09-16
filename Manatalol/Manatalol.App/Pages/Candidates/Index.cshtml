@@ -101,12 +101,13 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                <h5 class="modal-title">Create Candidate</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="row">
                     <div class="col-6 p-3">
-                        <a href="" class="border rounded p-3 d-flex flex-column align-items-center justify-content-center text-center" style="height:120px">
+                        <a href="/create-candidate" class="open-form border rounded p-3 d-flex flex-column align-items-center justify-content-center text-center" style="height:120px">
                             <div style="font-size: 2.1rem">
                                 <div class="stack-icon">
                                     <div class="icon-layers"><i class="sa sa-base-7 stack-3x text-primary"></i></div>
@@ -117,7 +118,7 @@
                         </a>
                     </div>
                     <div class="col-6 p-3">
-                        <a href="#" data-bs-toggle="modal" data-bs-target="#uploadModal" class="border rounded p-3 d-flex flex-column align-items-center justify-content-center text-center" style="height:120px">
+                        <a href="" class="open-file border rounded p-3 d-flex flex-column align-items-center justify-content-center text-center" style="height:120px">
                             <div style="font-size: 2.1rem">
                                 <div class="stack-icon">
                                     <div class="icon-layers"><i class="sa sa-base-7 stack-3x text-primary"></i></div>
@@ -128,7 +129,7 @@
                         </a>
                     </div>
                     <div class="col-6 p-3">
-                        <a href="#" data-bs-toggle="modal" data -bs-target="#  " class="border rounded p-3 d-flex flex-column align-items-center justify-content-center text-center" style="height:120px">
+                        <a href="" class="open-linkedin border rounded p-3 d-flex flex-column align-items-center justify-content-center text-center" style="height:120px">
                             <div style="font-size: 2.1rem">
                                 <div class="stack-icon">
                                     <div class="icon-layers"><i class="sa sa-base-7 stack-3x text-primary"></i></div>
@@ -143,45 +144,47 @@
         </div>
     </div>
 </div>
-<div class="modal fade" id="uploadModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <form method="post" enctype="multipart/form-data" asp-page-handler="Upload">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Upload CV PDF</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <input asp-for="PdfFiles" type="file" class="form-control" accept="application/pdf" multiple />
-                    <span asp-validation-for="PdfFiles" class="text-danger"></span>
-                </div>
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Upload</button>
-                </div>
-            </div>
-        </form>
-    </div>
-</div>
 
+<!-- Create Candidate Via Files -->
+<partial name="Partials/CreateCandidatViaFile" model="Model" />
 
-<!-- via linkedin url -->
-<div class="modal fade" id="linkedinModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <form method="get" asp-controller="Linkedin" asp-action="Login">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Ajouter via LinkedIn</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <label for="LinkedinUrl" class="form-label">URL LinkedIn</label>
-                    <input type="url" name="LinkedinUrl" class="form-control"
-                           placeholder="https://www.linkedin.com/in/nom-prenom" required />
-                </div>
-                <div class="modal-footer">
-                    <button id="linkedinBtn" type="button" class="btn btn-primary">Ajouter</button>
-                </div>
-            </div>
-        </form>
-    </div>
-</div>
+<!-- Create Candidate Via Linkedin url -->
+<partial name="Partials/CreateCandidatViaLinkedinUrl" model="Model" />
+
+@section Scripts {
+    <script>
+                document.addEventListener("DOMContentLoaded", function () {
+            const exampleModalEl = document.getElementById("exampleModal");
+            const exampleModal = bootstrap.Modal.getOrCreateInstance(exampleModalEl);
+
+            const fileModalEl = document.getElementById("createCandidatViaFile");
+            const linkedinModalEl = document.getElementById("createCandidatViaLinkedinUrl");
+
+            if (!fileModalEl || !linkedinModalEl) {
+                console.error("One of the modals does not exist!");
+                return;
+            }
+
+            const fileModal = bootstrap.Modal.getOrCreateInstance(fileModalEl);
+            const linkedinModal = bootstrap.Modal.getOrCreateInstance(linkedinModalEl);
+
+            function openNextModal(nextModal) {
+                exampleModalEl.addEventListener('hidden.bs.modal', function handler() {
+                    nextModal.show();
+                    exampleModalEl.removeEventListener('hidden.bs.modal', handler);
+                });
+                exampleModal.hide();
+            }
+
+            document.querySelector(".open-file").addEventListener("click", (e) => {
+                e.preventDefault();
+                openNextModal(fileModal);
+            });
+
+            document.querySelector(".open-linkedin").addEventListener("click", (e) => {
+                e.preventDefault();
+                openNextModal(linkedinModal);
+            });
+        });
+    </script>
+}

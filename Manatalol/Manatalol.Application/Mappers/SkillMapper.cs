@@ -12,5 +12,12 @@ namespace Manatalol.Application.Mappers
                 Name = request.Name
             };
         }
+        public static Skill ToEntity(this SkillDto request)
+        {
+            return new Skill
+            {
+                Name = request.Name
+            };
+        }
     }
 }

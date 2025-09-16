@@ -15,5 +15,6 @@ namespace Manatalol.Application.Interfaces
         Task<CandidateDto?> GetCandidateDetails(string reference);
         Task<string> CreateCandidateViaLinkedinUrl(string url, string createdBy);
         Task<string> SaveCandidateViaUpload(byte[] pdfBytes, string createdBy);
+        Task<string> CreateCandidatViaForm(CandidateInputModel request);
     }
 }

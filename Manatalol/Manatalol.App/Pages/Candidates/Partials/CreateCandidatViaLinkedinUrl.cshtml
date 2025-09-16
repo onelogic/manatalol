@@ -1,0 +1,22 @@
+﻿@model Manatalol.App.Pages.Candidates.IndexModel
+
+<div class="modal fade" id="createCandidatViaLinkedinUrl" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="get" asp-controller="Linkedin" asp-action="Login">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Ajouter via LinkedIn</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label for="LinkedinUrl" class="form-label">URL LinkedIn</label>
+                    <input type="url" name="LinkedinUrl" class="form-control"
+                           placeholder="https://www.linkedin.com/in/nom-prenom" required />
+                </div>
+                <div class="modal-footer">
+                    <button id="linkedinBtn" type="button" class="btn btn-primary">Ajouter</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

@@ -14,6 +14,7 @@ namespace Manatalol.Application.Interfaces
             string? sortDirection = null);
         Task<Candidate?> GetCandidateDetails(string reference);
         Task<Candidate?> GetCandidateByReference(string reference);
+        Task<bool?> CheckExistCandidat(Candidate candidate);
         Task CreateCandidate(Candidate candidate);
     }
 }

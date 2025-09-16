@@ -40,6 +40,7 @@ namespace Manatalol.Infrastructure.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasIndex(x => x.Reference).IsUnique();
+            builder.HasIndex(x => x.Email).IsUnique();
         }
     }
 }

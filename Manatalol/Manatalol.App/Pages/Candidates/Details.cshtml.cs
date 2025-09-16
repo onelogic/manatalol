@@ -1,5 +1,4 @@
 using Manatalol.App.Data;
-using Manatalol.Application.Common;
 using Manatalol.Application.DTO.Candidates;
 using Manatalol.Application.DTO.Notes;
 using Manatalol.Application.Interfaces;
