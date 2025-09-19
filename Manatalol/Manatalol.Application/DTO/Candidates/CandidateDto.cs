@@ -11,6 +11,7 @@ namespace Manatalol.Application.DTO.Candidates
         public string LastName { get; set; } = string.Empty;
         public string FirstName { get; set; } = string.Empty;
         public string Reference { get; set; } = string.Empty;
+        public string? ProfilePictureUrl { get; set; }
         public Gender Gender { get; set; }
         public string? CurrentCompany { get; set; } = string.Empty;
         public string? Location { get; set; } = string.Empty;

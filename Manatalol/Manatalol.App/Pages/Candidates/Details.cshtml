@@ -1,7 +1,14 @@
 ﻿@page "/details/{CandidateReference}"
+
+@using Manatalol.App.Data
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<ApplicationUser> _userManager
+
+}
 @model Manatalol.App.Pages.Candidates.DetailsModel
 @{
     var candidate = Model.CandidateDetails;
+    var user = await _userManager.GetUserAsync(User);
 }
 
 
@@ -17,7 +24,9 @@
                 <div class="profile-page-header-avatar mb-3 mb-md-0">
                     <div class="position-relative">
                         <img alt="" class="rounded-circle border border-3 border-white shadow-2" height="160"
-                             src="~/img/demo/avatars/avatar-admin-xl.png" width="160" />
+                             src="@(string.IsNullOrEmpty(candidate.ProfilePictureUrl)
+                                                                                                                                    ? Url.Content("~/img/demo/avatars/avatar-m.png")
+                                                                                                                                    : candidate.ProfilePictureUrl)" />
                     </div>
                 </div>
                 <!-- Profile Info -->
@@ -105,7 +114,7 @@
                                                 <div class="timeline-content">
                                                     <h5 class="mb-2">@exp.Position</h5>
                                                     <p class="text-muted mb-2">
-                                                        @exp.CompanyName • @exp.StartDate.ToString("MMMM yyyy") - @(exp.IsCurrent ? "Present" : exp.EndDate?.ToString("MMMM yyyy"))
+                                                        @exp.CompanyName • @exp.StartDate?.ToString("MMMM yyyy") - @(exp.IsCurrent ? "Present" : exp.EndDate?.ToString("MMMM yyyy"))
                                                     </p>
                                                     <p>
                                                         @exp.Description
@@ -151,7 +160,7 @@
                                                     <h5 class="mb-2">@education.Degree</h5>
                                                     <p class="text-muted mb-2">
                                                         @education.School
-                                                        • @education.StartDate.Year - @education.EndDate?.Year
+                                                        • @education.StartDate?.Year - @education.EndDate?.Year
                                                     </p>
                                                     <p>@education.Description</p>
                                                 </div>
@@ -175,9 +184,7 @@
                                         <div class="comments-section mt-3 border-bottom">
                                             <form method="post">
                                                 <div class="d-flex gap-2 mb-4 align-items-center">
-                                                    <img alt="User"
-                                                         class="profile-image profile-image-md rounded-circle me-2"
-                                                         src="~/img/demo/avatars/avatar-admin.png" />
+                                                   <div class="ma-avatar">@user?.FullName.Substring(0,2)</div>
 
                                                     <div class="flex-grow-1">
                                                         <div class="comment-input-wrapper">

@@ -1,4 +1,4 @@
-@* @page "/"
+@page "/dashboard"
 @model Smartadmin.Pages.Dashboard.IndexModel
 
 @{
@@ -10,90 +10,71 @@
 
 }
 
-@await Html.PartialAsync("~/Pages/Shared/Partials/_PageTitle.cshtml", new {
-pageTitle = "Blank Page",
-pageSubTitle1 = "Manatalol",
-pageSubTitle2 = (string?)null,
-pageSubText = (string?)null
-})
-
-
-<h1 class="subheader-title mt-4">
-    <small> Can be the starting page for your application...
-
-        <button class="btn btn-sm btn-outline-secondary" data-action="playsound" data-soundfile="blank_.mp3"
-            data-soundpath="media/sound/" type="button">
-            <svg class="sa-icon">
-                <use href="img/sprite.svg#volume-2"></use>
-            </svg>
-        </button>
-    </small>
-</h1>
-
 <div class="main-content">
-    <div class="info-container">
-        You can start building your application by using this page as a starting point.
-    </div>
     <div class="row">
-        <div class="col-sm-12">
-            <div class="card shadow-0 mb-g">
-                <div class="card-header">
-                    <div class="card-title">Card title</div>
+        <div class="col-xl-6">
+            <!-- Secession -->
+            <div class="panel panel-icon" id="panel-6">
+                <div class="panel-hdr">
+                    <h2> Secession <span class="fw-light"><i>Scale</i></span></h2>
                 </div>
-                <div class="card-body">
-                    <p class="card-text">Some quick example text to build on the card title and make
-                        up the bulk of the card's content.</p>
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-striped table-hover mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Email</th>
-                                    <th>Phone</th>
-                                    <th>Address</th>
-                                    <th>City</th>
-                                    <th>State</th>
-                                    <th>Zip</th>
-                                    <th>Country</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>John Doe</td>
-                                    <td>john.doe@example.com</td>
-                                    <td>123-456-7890</td>
-                                    <td>123 Main St</td>
-                                    <td>Anytown</td>
-                                    <td>CA</td>
-                                    <td>12345</td>
-                                    <td>USA</td>
-                                    <td>Edit</td>
-                                </tr>
-                                <tr>
-                                    <td>Jane Smith</td>
-                                    <td>jane.smith@example.com</td>
-                                    <td>987-654-3210</td>
-                                    <td>123 Main St</td>
-                                    <td>Anytown</td>
-                                    <td>CA</td>
-                                    <td>12345</td>
-                                    <td>USA</td>
-                                    <td>Edit</td>
-                                </tr>
-                                <tr>
-                                    <td>Bob Johnson</td>
-                                    <td>bob.johnson@example.com</td>
-                                    <td>555-123-4567</td>
-                                    <td>123 Main St</td>
-                                    <td>Anytown</td>
-                                    <td>CA</td>
-                                    <td>12345</td>
-                                    <td>USA</td>
-                                    <td>Edit</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                <div class="panel-container">
+                    <div class="panel-content">
+                        <div class="row mb-g">
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center" id="secessionChart"></div>
+                            </div>
+                            <div class="col-md-6 col-lg-5 me-lg-auto">
+                                <div class="d-flex mt-2 mb-1 fs-xs text-primary">
+                                    Current Usage
+                                </div>
+                                <div class="progress progress-xs mb-3">
+                                    <div aria-label="70%" aria-labelledby="Current Usage" aria-valuemax="100"
+                                         aria-valuemin="0" aria-valuenow="70" class="progress-bar" role="progressbar"
+                                         style="width: 70%;"></div>
+                                </div>
+                                <div class="d-flex mt-2 mb-1 fs-xs text-info">
+                                    Net Usage
+                                </div>
+                                <div class="progress progress-xs mb-3">
+                                    <div aria-label="30%" aria-labelledby="Net Usage" aria-valuemax="100"
+                                         aria-valuemin="0" aria-valuenow="30" class="progress-bar bg-info-500"
+                                         role="progressbar" style="width: 30%;"></div>
+                                </div>
+                                <div class="d-flex mt-2 mb-1 fs-xs text-warning">
+                                    Users blocked
+                                </div>
+                                <div class="progress progress-xs mb-3">
+                                    <div aria-label="40%" aria-labelledby="Users blocked" aria-valuemax="100"
+                                         aria-valuemin="0" aria-valuenow="40" class="progress-bar bg-warning-500"
+                                         role="progressbar" style="width: 40%;"></div>
+                                </div>
+                                <div class="d-flex mt-2 mb-1 fs-xs text-danger">
+                                    Custom cases
+                                </div>
+                                <div class="progress progress-xs mb-3">
+                                    <div aria-label="15%" aria-labelledby="Custom cases" aria-valuemax="100"
+                                         aria-valuemin="0" aria-valuenow="15" class="progress-bar bg-danger-500"
+                                         role="progressbar" style="width: 15%;"></div>
+                                </div>
+                                <div class="d-flex mt-2 mb-1 fs-xs text-success">
+                                    Test logs
+                                </div>
+                                <div class="progress progress-xs mb-3">
+                                    <div aria-label="25%" aria-labelledby="Test logs" aria-valuemax="100"
+                                         aria-valuemin="0" aria-valuenow="25" class="progress-bar bg-success-500"
+                                         role="progressbar" style="width: 25%;"></div>
+                                </div>
+                                <div class="d-flex mt-2 mb-1 fs-xs text-dark">
+                                    Uptime records
+                                </div>
+                                <div class="progress progress-xs mb-3">
+                                    <div aria-label="10%" aria-labelledby="Uptime records" aria-valuemax="100"
+                                         aria-valuemin="0" aria-valuenow="10" class="progress-bar bg-fusion-500"
+                                         role="progressbar" style="width: 10%;"></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -101,8 +82,13 @@ pageSubText = (string?)null
     </div>
 </div>
 
+
 @section scripts
 {
-    <script src="~/scripts/pages/blank.js"></script>
+    <script src="~/plugins/jsvectormap/jsvectormap.min.js"></script>
+    <script src="~/plugins/jsvectormap/world-merc.js"></script>
+    <script src="~/plugins/fullcalendar/index.global.min.js"></script>
+    <script src="~/plugins/easypiechart/easypiechart.min.js"></script>
+    <script src="~/scripts/pages/easypiechart.js"></script>
+    <script src="~/scripts/pages/controlcenterdashboard.js" type="module"></script>
 }
- *@

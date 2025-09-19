@@ -9,9 +9,12 @@ namespace Manatalol.Infrastructure.Data
         public void Configure(EntityTypeBuilder<Experience> builder)
         {
             builder.HasKey(e => e.Id);
-            builder.Property(e => e.CompanyName).IsRequired();
-            builder.Property(e => e.Position).IsRequired();
+            builder.Property(e => e.CompanyName);
+            builder.Property(e => e.Position);
             builder.Property(e => e.Description);
+            builder.Property(e => e.StartDate);
+            builder.Property(e => e.EndDate);
+            builder.Property(e => e.IsCurrent);
         }
     }
 }

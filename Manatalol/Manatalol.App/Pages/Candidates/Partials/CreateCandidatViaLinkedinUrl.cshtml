@@ -2,7 +2,7 @@
 
 <div class="modal fade" id="createCandidatViaLinkedinUrl" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
-        <form method="get" asp-controller="Linkedin" asp-action="Login">
+        <form method="post"  asp-page-handler="LinkedinUrl">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Ajouter via LinkedIn</h5>
@@ -14,7 +14,7 @@
                            placeholder="https://www.linkedin.com/in/nom-prenom" required />
                 </div>
                 <div class="modal-footer">
-                    <button id="linkedinBtn" type="button" class="btn btn-primary">Ajouter</button>
+                    <button id="linkedinBtn" type="submit" class="btn btn-primary">Ajouter</button>
                 </div>
             </div>
         </form>

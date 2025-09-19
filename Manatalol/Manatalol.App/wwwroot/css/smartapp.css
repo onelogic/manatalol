@@ -29169,3 +29169,21 @@ html.profile-edit-mode .profile-edit-mode {
     width: 25px;
     border-radius: 50%;
 }
+
+.ma-avatar {
+    width: 2rem;
+    height: 2rem;
+    max-width: 2rem;
+    max-height: 2rem;
+    border-radius: 50%;
+    -o-object-fit: cover;
+    object-fit: cover;
+    background-color: #a38cc6;
+    color: white;
+    font-weight: bold;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: Arial, sans-serif;
+}

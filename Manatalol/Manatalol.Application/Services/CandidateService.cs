@@ -68,8 +68,14 @@ namespace Manatalol.Application.Services
 
         public async Task<string> CreateCandidateViaLinkedinUrl(string url, string createdBy)
         {
-            var profile = await _linkedinService.GetProfileAsync();
-            return "";
+            var profile = await _linkedinService.GetProfileAsync(url);
+            if (profile == null)
+            {
+                throw new Exception("Unable to fetch LinkedIn profile data.");
+            }
+            var candidat = profile.ToCandidate(createdBy);
+            await _candidateRepository.CreateCandidate(candidat);
+            return candidat.Reference;
         }
 
         private Candidate ExtractCandidateDataFromPdf(byte[] pdfBytes, string createdBy)

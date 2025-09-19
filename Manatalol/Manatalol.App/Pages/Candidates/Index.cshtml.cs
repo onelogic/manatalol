@@ -97,5 +97,18 @@ namespace Manatalol.App.Pages.Candidates
 
         [BindProperty]
         public string LinkedinUrl { get; set; }
+        public async Task<IActionResult> OnPostLinkedinUrlAsync()
+        {
+            var user = await _userManager.GetUserAsync(User);
+
+            if (string.IsNullOrWhiteSpace(LinkedinUrl) || !LinkedinUrl.StartsWith("https://www.linkedin.com/in/"))
+            {
+                ModelState.AddModelError("", "Veuillez sélectionner un url de linkedin");
+                return Page();
+            }
+
+            var reference = await _candidateService.CreateCandidateViaLinkedinUrl(LinkedinUrl, user.FullName);
+            return RedirectToPage("/Candidates/Details", new { CandidateReference = reference });
+        }
     }
 }

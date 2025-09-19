@@ -14,8 +14,9 @@ namespace Manatalol.Domain.Entities
         public string? Function { get; set; } = string.Empty;
         public string? Email { get; set; }
         public string? PhoneNumber { get; set; }
+        public string? ProfilePictureUrl { get; set; }
         public SourceType Source { get; set; }
-        public string CreatedBy { get; set; }
+        public string CreatedBy { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
 
         public List<Experience> Experiences { get; set; }
