@@ -11,18 +11,18 @@
         <ol class="breadcrumb ms-0 text-muted mb-0">
             @if (Model.pageSubTitle1 != null)
             {
-                <li class="breadcrumb-item">@Model.pageSubTitle1</li>
-            }
-            @if (Model.pageSubTitle2 != null)
-            {
-                <li class="breadcrumb-item">@Model.pageSubTitle2</li>
+                <li class="breadcrumb-item">
+                    @if (Model.pageSubTitle1Url != null)
+                    {
+                        <a href="@Model.pageSubTitle1Url">@Model.pageSubTitle1</a>
+                    }
+                    else
+                    {
+                        @Model.pageSubTitle1
+                    }
+                </li>
             }
             <li class="breadcrumb-item active" aria-current="page">@Model.pageTitle</li>
         </ol>
     </nav>
-}
-
-@if (!string.IsNullOrEmpty(Model.pageSubText) && Model.pageSubText != "false")
-{
-    <h6 class="mt-3 mb-4 fst-italic">@Html.Raw(Model.pageSubText)</h6>
 }

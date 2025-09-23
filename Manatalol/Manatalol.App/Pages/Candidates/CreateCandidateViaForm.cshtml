@@ -1,6 +1,15 @@
 ﻿@page "/create-candidate"
 @model Manatalol.App.Pages.Candidates.CreateCandidateModalModel
 
+<div class="d-flex align-items-end mb-4">
+    <div>
+        @await Html.PartialAsync("~/Pages/Shared/Partials/_PageTitle.cshtml", new {
+        pageTitle = "Create Candidat",
+                pageSubTitle1 = "Candidats",
+                pageSubTitle1Url = "/"
+                })
+    </div>
+</div>
 <div>
     @if (!ModelState.IsValid)
     {
@@ -11,7 +20,6 @@
             <div asp-validation-summary="All"></div>
         </div>
     }
-    <h3 class="text-primary mb-3">Create New Candidate</h3>
 
     <form id="create-candidate-form" method="post" asp-page-handler="CreateCandidate">
         <div>

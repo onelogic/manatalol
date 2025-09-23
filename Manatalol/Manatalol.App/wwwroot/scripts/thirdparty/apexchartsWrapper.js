@@ -202,7 +202,6 @@ class SmartApexCharts extends OriginalApexCharts {
                 element: element,
                 config: config
             });
-            console.log(`SmartApexCharts: Registered chart #${SmartApexCharts.chartRegistry.instances.length}`);
         }
     }
     
@@ -311,7 +310,6 @@ class SmartApexCharts extends OriginalApexCharts {
     // Update all registered charts with current theme colors
     static updateChartColors() {
         const instanceCount = SmartApexCharts.chartRegistry.instances.length;
-        console.log(`SmartApexCharts: Updating colors for ${instanceCount} charts`);
         
         // Update color maps
         SmartApexCharts.extractColors();
@@ -783,13 +781,10 @@ class SmartApexCharts extends OriginalApexCharts {
                 
                 // Update the chart with new options
                 chart.updateOptions(updatedOptions, false, true);
-                console.log(`SmartApexCharts: Updated colors for chart #${index + 1}`);
             } catch (e) {
                 console.error(`SmartApexCharts: Error updating chart #${index + 1}:`, e);
             }
-        });
-        
-        console.log('SmartApexCharts: Chart color update complete');
+        });        
     }
 }
 

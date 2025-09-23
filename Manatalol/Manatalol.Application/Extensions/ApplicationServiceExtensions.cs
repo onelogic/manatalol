@@ -3,7 +3,6 @@ using Manatalol.Application.Interfaces;
 using Manatalol.Application.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using System.Net.Http.Headers;
 
 namespace Manatalol.Application.Extensions
 {
@@ -19,6 +18,7 @@ namespace Manatalol.Application.Extensions
             services.AddHttpClient<ILinkedinService, LinkedinService>();
             services.AddScoped<ICandidateService, CandidateService>();
             services.AddScoped<INoteService, NoteService>();
+            services.AddScoped<IDashboardService, DashboardService>();
             return services;
         }
     }

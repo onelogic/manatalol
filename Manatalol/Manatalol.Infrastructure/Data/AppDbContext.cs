@@ -11,6 +11,7 @@ namespace Manatalol.Infrastructure.Data
         public DbSet<Candidate> Candidates { get; set; }
         public DbSet<Experience> Experiences { get; set; }
         public DbSet<Note> Notes { get; set; }
+        public DbSet<Skill> Skill { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -18,6 +19,7 @@ namespace Manatalol.Infrastructure.Data
             modelBuilder.ApplyConfiguration(new CandidateConfiguration());
             modelBuilder.ApplyConfiguration(new ExperienceConfiguration());
             modelBuilder.ApplyConfiguration(new NoteConfiguration());
+            modelBuilder.ApplyConfiguration(new SkillConfiguration());
         }
     }
 }

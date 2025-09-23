@@ -1,44 +1,35 @@
 @inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
-
+@using Manatalol.App.Data
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<ApplicationUser> _userManager
 @{
-    var email = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? "";
-    var fullName = User.FindFirst("FullName")?.Value ?? User.Identity.Name;
+    var user = await _userManager.GetUserAsync(User);
 }
 
 <header class="app-header">
     <!-- Collapse icon -->
     <div class="d-flex flex-grow-1 w-100 me-auto align-items-center">
-
         <!-- App logo -->
         @await Html.PartialAsync("~/Pages/Shared/Partials/_AppLogo.cshtml")
-
-        <!-- Collapse icon -->
-        <button type="button" class="collapse-icon me-3 d-none d-lg-inline-flex d-xl-inline-flex d-xxl-inline-flex"
-            data-action="toggle" data-class="set-nav-minified" aria-label="Toggle Navigation Size">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 5 8">
-                <polygon fill="#878787" points="4.5,1 3.8,0.2 0,4 3.8,7.8 4.5,7 1.5,4" />
-            </svg>
-        </button>
     </div>
 
     <!-- Profile -->
-    <button type="button" data-bs-toggle="dropdown" title="drlantern@getwebora.com"
-        class="btn-system bg-transparent d-flex flex-shrink-0 align-items-center justify-content-center"
-        aria-label="Open Profile Dropdown">
-        <img src="~/img/demo/avatars/avatar-m.png" class="profile-image profile-image-md rounded-circle"
-            alt="Sunny A.">
+    <button type="button" data-bs-toggle="dropdown"
+            class="btn-system bg-transparent d-flex flex-shrink-0 align-items-center justify-content-center"
+            aria-label="Open Profile Dropdown">
+        <div class="ma-avatar">@user?.FullName.Substring(0, 2)</div>
     </button>
 
     <!-- Profile dropdown -->
     <div class="dropdown-menu dropdown-menu-animated">
         <div class="notification-header rounded-top mb-2">
             <div class="d-flex flex-row align-items-center mt-1 mb-1 color-white">
-                <span class="status status-success d-inline-block me-2">
-                    <img src="~/img/demo/avatars/avatar-m.png" class="profile-image rounded-circle" alt="Sunny A.">
-                </span>
+                <div class="status status-success d-inline-block me-2">
+                    <div class="ma-avatar me-2">@user?.FullName.Substring(0, 2)</div>
+                </div>
                 <div class="info-card-text">
-                    <div class="fs-lg text-truncate text-truncate-lg">@fullName</div>
-                    <span class="text-truncate text-truncate-md opacity-80 fs-sm">@email</span>
+                    <div class="fs-lg text-truncate text-truncate-lg">@user?.FullName</div>
+                    <span class="text-truncate text-truncate-md opacity-80 fs-sm">@user?.Email</span>
                 </div>
             </div>
         </div>

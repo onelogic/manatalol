@@ -15,6 +15,7 @@ namespace Manatalol.Infrastructure.Extensions
                 options.UseSqlServer(config.GetConnectionString("DefaultConnection")));
             services.AddScoped<ICandidateRepository, CandidateRepository>();
             services.AddScoped<INoteRepository, NoteRepository>();
+            services.AddScoped<IDashboardRepository, DashboardRepository>();
 
             return services;
         }

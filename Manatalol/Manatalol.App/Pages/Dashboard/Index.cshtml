@@ -2,79 +2,35 @@
 @model Smartadmin.Pages.Dashboard.IndexModel
 
 @{
-    ViewBag.Title = "Index";
-}
-
-@section styles
-{
-
+    ViewBag.Title = "Dashboard";
 }
 
 <div class="main-content">
     <div class="row">
-        <div class="col-xl-6">
-            <!-- Secession -->
-            <div class="panel panel-icon" id="panel-6">
+        <div class="col-sm-6">
+            <div class="panel panel-icon" id="panel-1">
                 <div class="panel-hdr">
-                    <h2> Secession <span class="fw-light"><i>Scale</i></span></h2>
+                    <h2>
+                        Skills<span class="fw-light"><i>Chart</i></span>
+                    </h2>
                 </div>
                 <div class="panel-container">
                     <div class="panel-content">
-                        <div class="row mb-g">
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-center" id="secessionChart"></div>
-                            </div>
-                            <div class="col-md-6 col-lg-5 me-lg-auto">
-                                <div class="d-flex mt-2 mb-1 fs-xs text-primary">
-                                    Current Usage
-                                </div>
-                                <div class="progress progress-xs mb-3">
-                                    <div aria-label="70%" aria-labelledby="Current Usage" aria-valuemax="100"
-                                         aria-valuemin="0" aria-valuenow="70" class="progress-bar" role="progressbar"
-                                         style="width: 70%;"></div>
-                                </div>
-                                <div class="d-flex mt-2 mb-1 fs-xs text-info">
-                                    Net Usage
-                                </div>
-                                <div class="progress progress-xs mb-3">
-                                    <div aria-label="30%" aria-labelledby="Net Usage" aria-valuemax="100"
-                                         aria-valuemin="0" aria-valuenow="30" class="progress-bar bg-info-500"
-                                         role="progressbar" style="width: 30%;"></div>
-                                </div>
-                                <div class="d-flex mt-2 mb-1 fs-xs text-warning">
-                                    Users blocked
-                                </div>
-                                <div class="progress progress-xs mb-3">
-                                    <div aria-label="40%" aria-labelledby="Users blocked" aria-valuemax="100"
-                                         aria-valuemin="0" aria-valuenow="40" class="progress-bar bg-warning-500"
-                                         role="progressbar" style="width: 40%;"></div>
-                                </div>
-                                <div class="d-flex mt-2 mb-1 fs-xs text-danger">
-                                    Custom cases
-                                </div>
-                                <div class="progress progress-xs mb-3">
-                                    <div aria-label="15%" aria-labelledby="Custom cases" aria-valuemax="100"
-                                         aria-valuemin="0" aria-valuenow="15" class="progress-bar bg-danger-500"
-                                         role="progressbar" style="width: 15%;"></div>
-                                </div>
-                                <div class="d-flex mt-2 mb-1 fs-xs text-success">
-                                    Test logs
-                                </div>
-                                <div class="progress progress-xs mb-3">
-                                    <div aria-label="25%" aria-labelledby="Test logs" aria-valuemax="100"
-                                         aria-valuemin="0" aria-valuenow="25" class="progress-bar bg-success-500"
-                                         role="progressbar" style="width: 25%;"></div>
-                                </div>
-                                <div class="d-flex mt-2 mb-1 fs-xs text-dark">
-                                    Uptime records
-                                </div>
-                                <div class="progress progress-xs mb-3">
-                                    <div aria-label="10%" aria-labelledby="Uptime records" aria-valuemax="100"
-                                         aria-valuemin="0" aria-valuenow="10" class="progress-bar bg-fusion-500"
-                                         role="progressbar" style="width: 10%;"></div>
-                                </div>
-                            </div>
-                        </div>
+                        <div id="skills-pie-chart"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6">
+            <div class="panel panel-icon" id="panel-3">
+                <div class="panel-hdr">
+                    <h2>
+                        Functions <span class="fw-light"><i>Chart</i></span>
+                    </h2>
+                </div>
+                <div class="panel-container">
+                    <div class="panel-content">
+                        <div id="functions-donut-chart"></div>
                     </div>
                 </div>
             </div>
@@ -82,13 +38,54 @@
     </div>
 </div>
 
-
 @section scripts
 {
-    <script src="~/plugins/jsvectormap/jsvectormap.min.js"></script>
-    <script src="~/plugins/jsvectormap/world-merc.js"></script>
-    <script src="~/plugins/fullcalendar/index.global.min.js"></script>
-    <script src="~/plugins/easypiechart/easypiechart.min.js"></script>
-    <script src="~/scripts/pages/easypiechart.js"></script>
-    <script src="~/scripts/pages/controlcenterdashboard.js" type="module"></script>
+    <script type="module">
+        import ApexCharts from '/scripts/thirdparty/apexchartsWrapper.js';
+
+            var skillsData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.SkillsData));
+            var functionsData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.FunctionsData));
+
+
+            document.addEventListener('DOMContentLoaded', function () {
+                'use strict';
+
+                if (document.getElementById('skills-pie-chart')) {
+                    const labels = skillsData.map(item => Object.keys(item)[0]);
+                    const series = skillsData.map(item => Object.values(item)[0]);
+
+                    const options = {
+                        series: series,
+                        chart: {
+                            type: 'pie',
+                            height: 380
+                        },
+                        labels: labels,
+                        legend: {
+                            position: 'right'
+                        }
+                    };
+
+                    const chart = new ApexCharts(document.getElementById('skills-pie-chart'), options);
+                    chart.render();
+                }
+
+                if (document.getElementById('functions-donut-chart')) {
+                    const labels = functionsData.map(item => Object.keys(item)[0]);
+                    const series = functionsData.map(item => Object.values(item)[0]);
+
+                    const options = {
+                        series: series,
+                        chart: {
+                            type: 'donut',
+                            height: 380
+                        },
+                        labels: labels
+                    };
+
+                    const chart = new ApexCharts(document.getElementById('functions-donut-chart'), options);
+                    chart.render();
+                }
+            });
+    </script>
 }
