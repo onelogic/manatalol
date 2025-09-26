@@ -1,0 +1,172 @@
+﻿@model Manatalol.Application.DTO.Candidates.CandidateInputModel
+@{
+    var candidate = Model;
+    var isEdit = candidate?.Reference != null;
+}
+
+<style>
+    .tag {
+        color: white;
+        padding: 4px 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+        .tag button {
+            background: none;
+            border: none;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+</style>
+<div>
+    <input type="hidden" asp-for="@candidate.Reference" />
+    <div>
+        <!-- About Me -->
+        <h5 class="text-danger mb-3">About Me</h5>
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label asp-for="@candidate.FirstName"></label>
+                <input asp-for="@candidate.FirstName" class="form-control" />
+            </div>
+            <div class="col-md-6">
+                <label asp-for="@candidate.LastName"></label>
+                <input asp-for="@candidate.LastName" class="form-control" />
+            </div>
+        </div>
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label asp-for="@candidate.Email"></label>
+                <input asp-for="@candidate.Email" type="email" class="form-control" />
+            </div>
+            <div class="col-md-6">
+                <label asp-for="@candidate.PhoneNumber"></label>
+                <input asp-for="@candidate.PhoneNumber" class="form-control" />
+            </div>
+        </div>
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label asp-for="@candidate.Location"></label>
+                <input asp-for="@candidate.Location" class="form-control" />
+            </div>
+            <div class="col-md-6">
+                <label asp-for="@candidate.Function"></label>
+                <input asp-for="@candidate.Function" class="form-control" />
+            </div>
+        </div>
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label asp-for="@candidate.CurrentCompany"></label>
+                <input asp-for="@candidate.CurrentCompany" class="form-control" />
+            </div>
+        </div>
+
+        <hr />
+
+        <!-- Skills -->
+        <h5 class="mb-2">Skills</h5>
+        <div id="skills-wrapper" class="mb-3">
+            <input type="text" id="skill-input" class="form-control" placeholder="Type skill and press Enter" />
+            <div id="skills-tags" class="mt-2 d-flex flex-wrap gap-2"></div>
+        </div>
+        <input type="hidden" name="Candidate.SkillsTag" id="skills-hidden" value="@string.Join(",", Model.Skills?.Select(s => s.Name) ?? new List<string>())" />
+
+        <hr />
+
+        <!-- Experience -->
+        <h5 class="text-danger mb-3">Experiences</h5>
+        <div id="experienceContainer">
+            @if (@candidate?.Experiences != null)
+            {
+                for (int i = 0; i < @candidate.Experiences.Count; i++)
+                {
+                    <div class="border p-3 mb-2 experience-block">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label>Company</label>
+                                <input name="Candidate.Experiences[@i].CompanyName" value="@candidate.Experiences[i].CompanyName" class="form-control mb-2" />
+                            </div>
+                            <div class="col-md-6">
+                                <label>Position</label>
+                                <input name="Candidate.Experiences[@i].Position" value="@candidate.Experiences[i].Position" class="form-control mb-2" />
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label>Start Date</label>
+                                <input type="date" name="Candidate.Experiences[@i].StartDate" value="@candidate.Experiences[i].StartDate?.ToString("yyyy-MM-dd")" class="form-control mb-2" />
+                            </div>
+                            <div class="col-md-6">
+                                <div class="row">
+                                    <div class="col-md-9">
+                                        <label>End Date</label>
+                                        <input type="date" name="Candidate.Experiences[@i].EndDate" value="@candidate.Experiences[i].EndDate?.ToString("yyyy-MM-dd")" class="form-control mb-2" />
+                                        <div class="invalid-feedback"></div>
+                                    </div>
+                                    <div class="col-md-3 align-self-center">
+                                        <input asp-for="@candidate.Experiences[i].IsCurrent" class="form-check-input is-current-checkbox" />
+                                        <label asp-for="@candidate.Experiences[i].IsCurrent" class="form-check-label"></label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <label>Description</label>
+                        <textarea name="@candidate.Experiences[@i].Description" class="form-control mb-2">@candidate.Experiences[i].Description</textarea>
+                        <button type="button" class="btn btn-danger btn-sm remove-experience mt-2">Remove</button>
+                    </div>
+                }
+            }
+        </div>
+        <button type="button" class="btn btn-outline-primary mb-3" id="addExperienceBtn">+ Add Experience</button>
+
+        <hr />
+        <!-- Education -->
+        <h5 class="text-danger mb-3">Educations</h5>
+        <div id="educationContainer">
+            @if (@candidate?.Educations != null)
+            {
+                for (int i = 0; i < @candidate.Educations.Count; i++)
+                {
+                    <div class="border p-3 mb-2 education-block">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label>School</label>
+                                <input name="Candidate.Educations[@i].School" value="@candidate.Educations[i].School" class="form-control mb-2" />
+                            </div>
+                            <div class="col-md-6">
+                                <label>Degree</label>
+                                <input name="Candidate.Educations[@i].Degree" value="@candidate.Educations[i].Degree" class="form-control mb-2" />
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label>Start Date</label>
+                                <input type="date" name="Candidate.Educations[@i].StartDate" value="@candidate.Educations[i].StartDate?.ToString("yyyy-MM-dd")" class="form-control mb-2" />
+                            </div>
+                            <div class="col-md-6">
+                                <label>End Date</label>
+                                <input type="date" name="Candidate.Educations[@i].EndDate" value="@candidate.Educations[i].EndDate?.ToString("yyyy-MM-dd")" class="form-control mb-2" />
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                        <label>Description</label>
+                        <textarea name="Candidate.Educations[@i].Description" class="form-control mb-2">@candidate.Educations[i].Description</textarea>
+                        <button type="button" class="btn btn-danger btn-sm remove-education mt-2">Remove</button>
+                    </div>
+                }
+            }
+        </div>
+        <button type="button" class="btn btn-outline-primary mb-3" id="addEducationBtn">+ Add Education</button>
+
+    </div>
+
+    <div class="d-flex justify-content-end">
+        <a asp-page="/candidates/index" class="btn btn-light">Cancel</a>
+        <button type="submit" class="btn btn-success">
+            @(isEdit ? "Update" : "Create")
+        </button>
+    </div>
+</div>
+

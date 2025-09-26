@@ -19,6 +19,7 @@ namespace Manatalol.Infrastructure.Data
             builder.Property(c => c.PhoneNumber);
             builder.Property(c => c.Source);
             builder.Property(c => c.CreatedBy);
+            builder.Property(c => c.LinkedinUrl);
             builder.HasMany(c => c.Experiences)
                 .WithOne(e => e.Candidate)
                 .HasForeignKey(e => e.CandidateId)
@@ -41,6 +42,7 @@ namespace Manatalol.Infrastructure.Data
 
             builder.HasIndex(x => x.Reference).IsUnique();
             builder.HasIndex(x => x.Email).IsUnique();
+            builder.HasIndex(x => x.LinkedinUrl).IsUnique();
         }
     }
 }

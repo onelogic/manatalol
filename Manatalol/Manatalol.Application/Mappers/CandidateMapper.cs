@@ -1,5 +1,8 @@
 ﻿using Manatalol.Application.DTO.Api;
 using Manatalol.Application.DTO.Candidates;
+using Manatalol.Application.DTO.Educations;
+using Manatalol.Application.DTO.Experiences;
+using Manatalol.Application.DTO.Skills;
 using Manatalol.Domain.Entities;
 using Manatalol.Domain.Enums;
 
@@ -99,6 +102,80 @@ namespace Manatalol.Application.Mappers
 
                 Notes = new List<Note>()
             };
+        }
+
+        public static CandidateInputModel ToInputModal(this Candidate candidate)
+        {
+            if (candidate == null) return null;
+
+            return new CandidateInputModel
+            {
+                LastName = candidate.LastName,
+                FirstName = candidate.FirstName,
+                Reference = candidate.Reference,
+                Gender = candidate.Gender,
+                CurrentCompany = candidate.CurrentCompany,
+                Location = candidate.Location,
+                Function = candidate.Function,
+                PhoneNumber = candidate.PhoneNumber,
+                Email = candidate.Email,
+                Source = candidate.Source,
+                CreatedBy = candidate.CreatedBy,
+                SkillsTag = string.Join(",", candidate.Skills.Select(s => s.Name)),
+                Educations = (candidate.Educations != null) ? candidate.Educations.Select(e => e.ToDto()).ToList() : new List<EducationDto>(),
+                Experiences = (candidate.Experiences != null) ? candidate.Experiences.Select(e => e.ToDto()).ToList() : new List<ExperienceDto>(),
+                Skills = (candidate.Skills != null) ? candidate.Skills.Select(s => s.ToDto()).ToList() : new List<SkillDto>()
+            };
+        }
+
+        public static Candidate ToUpdateEntity(this CandidateInputModel request, Candidate candidate)
+        {
+            candidate.FirstName = request.FirstName;
+            candidate.LastName = request.LastName;
+            candidate.Email = request.Email;
+            candidate.PhoneNumber = request.PhoneNumber;
+            candidate.Location = request.Location;
+            candidate.Function = request.Function;
+            candidate.CurrentCompany = request.CurrentCompany;
+            candidate.Gender = request.Gender;
+
+            candidate.Experiences?.Clear();
+            if (request.Experiences != null)
+            {
+                candidate.Experiences = request.Experiences.Select(e => new Experience
+                {
+                    CompanyName = e.CompanyName,
+                    Position = e.Position,
+                    StartDate = e.StartDate,
+                    EndDate = e.EndDate,
+                    Description = e.Description,
+                    IsCurrent = e.IsCurrent
+                }).ToList();
+            }
+
+            candidate.Skills?.Clear();
+            if (request.SkillsTag != null)
+            {
+                candidate.Skills = request.SkillsTag != null
+                    ? request.SkillsTag.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(s => new Skill { Name = s.Trim() })
+                        .ToList()
+                    : new List<Skill>();
+            }
+
+            candidate.Educations?.Clear();
+            if (request.Educations != null)
+            {
+                candidate.Educations = request.Educations.Select(ed => new Education
+                {
+                    School = ed.School,
+                    Degree = ed.Degree,
+                    StartDate = ed.StartDate,
+                    EndDate = ed.EndDate,
+                    Description = ed.Description
+                }).ToList();
+            }
+            return candidate;
         }
     }
 }

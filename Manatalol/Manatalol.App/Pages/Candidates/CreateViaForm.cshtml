@@ -1,0 +1,27 @@
+﻿@page "/create-candidate"
+@model Manatalol.App.Pages.Candidates.CreateViaFormModel
+
+<div class="d-flex align-items-end mb-4">
+    <div>
+        @await Html.PartialAsync("~/Pages/Shared/Partials/_PageTitle.cshtml", new {
+        pageTitle = "Create Candidat",
+                pageSubTitle1 = "Candidats",
+                pageSubTitle1Url = "/"
+                })
+    </div>
+</div>
+@if (!Model.ModelState.IsValid)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
+            <i class="bi bi-trash"></i>
+        </button>
+        <div asp-validation-summary="All"></div>
+    </div>
+}
+<form id="candidate-form" method="post" asp-page-handler="CreateCandidate">
+    @await Html.PartialAsync("~/Pages/Candidates/Partials/_CandidateForm.cshtml", Model.Candidate)
+</form>
+@section Scripts {
+    <script src="~/scripts/pages/candidateForm.js"></script>
+}

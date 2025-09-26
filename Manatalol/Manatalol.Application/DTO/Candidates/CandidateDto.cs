@@ -10,7 +10,7 @@ namespace Manatalol.Application.DTO.Candidates
     {
         public string LastName { get; set; } = string.Empty;
         public string FirstName { get; set; } = string.Empty;
-        public string Reference { get; set; } = string.Empty;
+        public string? Reference { get; set; } = string.Empty;
         public string? ProfilePictureUrl { get; set; }
         public Gender Gender { get; set; }
         public string? CurrentCompany { get; set; } = string.Empty;
@@ -19,6 +19,7 @@ namespace Manatalol.Application.DTO.Candidates
 
         public string? PhoneNumber { get; set; }
         public string? Function { get; set; } = string.Empty;
+        public string? LinkedinUrl { get; set; }
         public string CreatedBy { get; set; } = string.Empty;
         public SourceType Source { get; set; }
         public int NotesCount { get; set; }

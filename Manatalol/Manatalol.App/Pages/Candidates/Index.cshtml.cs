@@ -110,5 +110,16 @@ namespace Manatalol.App.Pages.Candidates
             var reference = await _candidateService.CreateCandidateViaLinkedinUrl(LinkedinUrl, user.FullName);
             return RedirectToPage("/Candidates/Details", new { CandidateReference = reference });
         }
+
+        public async Task<IActionResult> OnPostDeleteAsync(string reference)
+        {
+            if (string.IsNullOrEmpty(reference))
+            {
+                ModelState.AddModelError("", "Candidate Reference is empty");
+                return Page();
+            }
+            await _candidateService.DeleteCandidate(reference);
+            return RedirectToPage("/Candidates/Index");
+        }
     }
 }

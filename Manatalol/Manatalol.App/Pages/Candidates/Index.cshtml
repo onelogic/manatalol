@@ -63,7 +63,7 @@
                                 {
                                     <div class="ma-avatar me-1 bg-secondary">@candidate.FirstName.Substring(0, 2)</div>
                                 }
-                                @candidate.FirstName @candidate.LastName
+                                <a href="/details/@candidate.Reference">@candidate.FirstName @candidate.LastName</a>
                             </td>
                             <td>@candidate.Location</td>
                             <td>@candidate.Function</td>
@@ -71,12 +71,26 @@
                             <td>@candidate.Source</td>
                             <td>@candidate.NotesCount</td>
                             <td>
-                                <a href="/details/@candidate.Reference" class="btn btn-sm btn-outline-secondary">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
-                                        <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"></path>
-                                        <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"></path>
-                                    </svg>
-                                </a>
+                                <div class="d-flex align-items-center">
+                                    <a href="/details/@candidate.Reference" class="me-1">
+                                        <svg class="sa-icon me-2 inline-text">
+                                            <use href="@Url.Content("~/icons/sprite.svg#eye")" style="stroke:#2196F3"></use>
+                                        </svg>
+                                    </a>
+                                    <a href="/update/@candidate.Reference">
+                                        <svg class="sa-icon me-2 inline-text">
+                                            <use href="@Url.Content("~/icons/sprite.svg#edit-3")" style="stroke:#886ab5"></use>
+                                        </svg>
+                                    </a>
+                                    <a href="" data-bs-target="#delete-candidate-modal"
+                                       data-bs-toggle="modal"
+                                       data-reference="@candidate.Reference"
+                                       data-notes="@candidate.NotesCount">
+                                        <svg class="sa-icon me-2 inline-text">
+                                            <use href="@Url.Content("~/icons/sprite.svg#trash")" style="stroke:#fc077a"></use>
+                                        </svg>
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                     }
@@ -103,7 +117,7 @@
         </div>
     </div>
 </div>
-
+<!-- Create Candidate Container -->
 <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -153,14 +167,56 @@
 </div>
 
 <!-- Create Candidate Via Files -->
-<partial name="Partials/CreateCandidatViaFile" model="Model" />
+<partial name="Partials/CreateViaFile" model="Model" />
 
 <!-- Create Candidate Via Linkedin url -->
-<partial name="Partials/CreateCandidatViaLinkedinUrl" model="Model" />
+<partial name="Partials/CreateViaLinkedinUrl" model="Model" />
+
+<!-- Delete Candidate Modal -->
+<div aria-hidden="true" class="modal fade" id="delete-candidate-modal" role="dialog"
+     tabindex="-1">
+    <div class="modal-dialog modal-md" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    Delete Candidate
+                </h5>
+                <button aria-label="Close" class="btn btn-system ms-auto"
+                        data-bs-dismiss="modal" type="button">
+                    <svg class="sa-icon sa-icon-2x">
+                        <use href="@Url.Content("~/icons/sprite.svg#x")"></use>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div>
+                    Are you sure you want to delete candidate ?
+                </div>
+                <br />
+                <div class="alert alert-danger m-0" id="alert-notes">
+                    This candidate already has <span id="notes-count"></span> notes.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal"
+                        type="button">
+                    Cancel
+                </button>
+                <form method="post" asp-page-handler="Delete">
+                    <input type="hidden" name="Reference" id="delete-reference" />
+                    <button class="btn btn-primary" type="submit">
+                       Confirm
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 @section Scripts {
     <script>
-                document.addEventListener("DOMContentLoaded", function () {
+        document.addEventListener("DOMContentLoaded", function () {
             const exampleModalEl = document.getElementById("exampleModal");
             const exampleModal = bootstrap.Modal.getOrCreateInstance(exampleModalEl);
 
@@ -191,6 +247,27 @@
             document.querySelector(".open-linkedin").addEventListener("click", (e) => {
                 e.preventDefault();
                 openNextModal(linkedinModal);
+            });
+
+
+            const deleteModal = document.getElementById('delete-candidate-modal');
+            deleteModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                const notes = button.getAttribute('data-notes');
+                document.getElementById('notes-count').textContent = notes;
+                const reference = button.getAttribute('data-reference');
+                document.getElementById('delete-reference').value = reference;
+                const alertNotes = document.getElementById('alert-notes');
+                if(notes >0)
+                {
+                    alertNotes.classList.remove("d-none");
+                    alertNotes.classList.add("d-block");
+                }
+                else
+                {
+                    alertNotes.classList.remove("d-block");
+                    alertNotes.classList.add("d-none");
+                }
             });
         });
     </script>

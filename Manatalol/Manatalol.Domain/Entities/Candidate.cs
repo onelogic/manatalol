@@ -15,6 +15,7 @@ namespace Manatalol.Domain.Entities
         public string? Email { get; set; }
         public string? PhoneNumber { get; set; }
         public string? ProfilePictureUrl { get; set; }
+        public string? LinkedinUrl { get; set; }
         public SourceType Source { get; set; }
         public string CreatedBy { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }

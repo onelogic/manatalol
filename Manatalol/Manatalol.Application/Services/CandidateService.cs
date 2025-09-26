@@ -39,8 +39,15 @@ namespace Manatalol.Application.Services
         public async Task<CandidateDto?> GetCandidateDetails(string reference)
         {
             var candidate = await _candidateRepository.GetCandidateDetails(reference);
-            return candidate == null ? null : candidate.ToDto();
+            return candidate?.ToDto();
         }
+
+        public async Task<CandidateInputModel?> GetCandidateDetailsToUpdate(string reference)
+        {
+            var candidate = await _candidateRepository.GetCandidateDetails(reference);
+            return candidate?.ToInputModal();
+        }
+
 
         public async Task<string> CreateCandidatViaForm(CandidateInputModel request)
         {
@@ -59,11 +66,30 @@ namespace Manatalol.Application.Services
             return request.Reference;
         }
 
+        public async Task<string> UpdateCandidate(CandidateInputModel request)
+        {
+            if (string.IsNullOrEmpty(request.Reference))
+                throw new ApplicationException("Reference is required");
+
+            var candidate = await _candidateRepository.GetCandidateDetails(request.Reference);
+            if (candidate == null)
+                throw new ApplicationException("Candidate not found");
+
+            candidate = request.ToUpdateEntity(candidate);
+            await _candidateRepository.UpdateCandidate(candidate);
+            return request.Reference;
+        }
+
         public async Task<string> SaveCandidateViaUpload(byte[] pdfBytes, string createdBy)
         {
-            var candidate = ExtractCandidateDataFromPdf(pdfBytes, createdBy);
-            await _candidateRepository.CreateCandidate(candidate);
-            return candidate.Reference;
+            var candidat = ExtractCandidateDataFromPdf(pdfBytes, createdBy);
+            var existEmail = await _candidateRepository.CheckExistCandidat(candidat);
+            if (existEmail == true)
+            {
+                throw new Exception("There already exists a candidat with this email address");
+            }
+            await _candidateRepository.CreateCandidate(candidat);
+            return candidat.Reference;
         }
 
         public async Task<string> CreateCandidateViaLinkedinUrl(string url, string createdBy)
@@ -71,11 +97,26 @@ namespace Manatalol.Application.Services
             var profile = await _linkedinService.GetProfileAsync(url);
             if (profile == null)
             {
-                throw new Exception("Unable to fetch LinkedIn profile data.");
+                throw new ApplicationException("Unable to fetch LinkedIn profile data.");
             }
             var candidat = profile.ToCandidate(createdBy);
+            var existEmail = await _candidateRepository.CheckExistCandidat(candidat);
+            if (existEmail == true)
+            {
+                throw new ApplicationException("There already exists a candidat with this email address");
+            }
             await _candidateRepository.CreateCandidate(candidat);
             return candidat.Reference;
+        }
+
+        public async Task DeleteCandidate(string reference)
+        {
+            var candidate = await _candidateRepository.GetCandidateDetails(reference);
+            if (candidate == null)
+            {
+                throw new ApplicationException("Candidat not found");
+            }
+            await _candidateRepository.DeleteCandidate(candidate);
         }
 
         private Candidate ExtractCandidateDataFromPdf(byte[] pdfBytes, string createdBy)

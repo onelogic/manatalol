@@ -7,6 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="wwwroot\media\**" />
+    <Content Remove="wwwroot\media\**" />
+    <EmbeddedResource Remove="wwwroot\media\**" />
+    <None Remove="wwwroot\media\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.3.1" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.8" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="9.0.8" />
@@ -34,8 +41,6 @@
     <Folder Include="wwwroot\img\profile\" />
     <Folder Include="wwwroot\img\search\" />
     <Folder Include="wwwroot\img\thumbs\" />
-    <Folder Include="wwwroot\json\" />
-    <Folder Include="wwwroot\media\sound\" />
     <Folder Include="wwwroot\plugins\apexcharts\" />
     <Folder Include="wwwroot\plugins\bootstrap\" />
     <Folder Include="wwwroot\plugins\easypiechart\" />
@@ -50,9 +55,6 @@
     <Folder Include="wwwroot\plugins\vanta\" />
     <Folder Include="wwwroot\plugins\waves\" />
     <Folder Include="wwwroot\scripts\core\" />
-    <Folder Include="wwwroot\scripts\optional\smartTables\" />
-    <Folder Include="wwwroot\scripts\pages\" />
-    <Folder Include="wwwroot\scripts\thirdparty\" />
     <Folder Include="wwwroot\webfonts\fontawesome\fonts\" />
     <Folder Include="wwwroot\webfonts\smartadmin\fonts\" />
   </ItemGroup>

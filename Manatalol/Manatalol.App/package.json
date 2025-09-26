@@ -20,6 +20,7 @@
         "cheerio": "^1.1.0",
         "clean-css": "^5.3.1",
         "del": "^6.1.1",
+        "eslint": "^9.36.0",
         "gulp": "^4.0.2",
         "gulp-autoprefixer": "^8.0.0",
         "gulp-clean-css": "^4.2.0",

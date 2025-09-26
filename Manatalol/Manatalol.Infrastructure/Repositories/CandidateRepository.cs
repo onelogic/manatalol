@@ -61,8 +61,16 @@ namespace Manatalol.Infrastructure.Repositories
         }
 
         public async Task<bool?> CheckExistCandidat(Candidate candidate)
-        => ((await _context.Candidates.Where(c => c.Email == candidate.Email).FirstOrDefaultAsync()) != null);
-        
+        {
+            if (string.IsNullOrEmpty(candidate.Email) && string.IsNullOrEmpty(candidate.LinkedinUrl))
+                return false;
+
+            return await _context.Candidates.AnyAsync(c =>
+                (!string.IsNullOrEmpty(candidate.Email) && c.Email == candidate.Email) ||
+                (!string.IsNullOrEmpty(candidate.LinkedinUrl) && c.LinkedinUrl == candidate.LinkedinUrl)
+            );
+        }
+
         public async Task<Candidate?> GetCandidateByReference(string reference)
         {
             return await _context.Candidates.FirstOrDefaultAsync(c => c.Reference == reference);
@@ -72,6 +80,17 @@ namespace Manatalol.Infrastructure.Repositories
         {
             candidate.CreatedAt = DateTime.Now;
             _context.Candidates.Add(candidate);
+            await _context.SaveChangesAsync();
+        }
+        public async Task UpdateCandidate(Candidate candidate)
+        {
+            _context.Candidates.Update(candidate);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteCandidate(Candidate candidate)
+        {
+            _context.Candidates.Remove(candidate);
             await _context.SaveChangesAsync();
         }
 

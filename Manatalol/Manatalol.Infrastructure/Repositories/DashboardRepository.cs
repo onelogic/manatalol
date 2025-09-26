@@ -16,13 +16,13 @@ namespace Manatalol.Infrastructure.Repositories
         public async Task<List<Dictionary<string, int>>> GetFunctionsData()
         => await _context.Candidates
                 .GroupBy(c => c.Function)
-                .Select(g => new Dictionary<string, int> { { g.Key, g.Count() } })
+                .Select(g => new Dictionary<string, int> { { g.Key ?? "Unknown", g.Count() } })
                 .ToListAsync();
 
         public async Task<List<Dictionary<string, int>>> GetSkillssData()
-       => await _context.Skill
-               .GroupBy(c => c.Name)
-               .Select(g => new Dictionary<string, int> { { g.Key, g.Count() } })
-               .ToListAsync();
+        => await _context.Skill
+                .GroupBy(c => c.Name)
+                .Select(g => new Dictionary<string, int> { { g.Key, g.Count() } })
+                .ToListAsync();
     }
 }
