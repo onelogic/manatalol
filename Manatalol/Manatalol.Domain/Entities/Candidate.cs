@@ -12,6 +12,7 @@ namespace Manatalol.Domain.Entities
         public string? CurrentCompany { get; set; } = string.Empty;
         public string? Location { get; set; } = string.Empty;
         public string? Function { get; set; } = string.Empty;
+        public string? Summary { get; set; } = string.Empty;
         public string? Email { get; set; }
         public string? PhoneNumber { get; set; }
         public string? ProfilePictureUrl { get; set; }

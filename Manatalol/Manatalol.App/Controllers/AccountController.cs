@@ -12,13 +12,5 @@ namespace Manatalol.App.Controllers
         {
             _signInManager = signInManager;
         }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Logout()
-        {
-            await _signInManager.SignOutAsync();
-            return RedirectToPage("/Auth/Login"); 
-        }
     }
 }

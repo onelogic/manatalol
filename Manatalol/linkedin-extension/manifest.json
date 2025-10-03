@@ -1,0 +1,11 @@
+{
+  "name": "ManatalOl Extension",
+  "description": "Send URL Linkedin to the ManatalOl application",
+  "version": "1.0",
+  "manifest_version": 3,
+  "permissions": ["tabs"],
+  "action": {
+    "default_popup": "script.html",
+    "default_icon": "img.png"
+  }
+}

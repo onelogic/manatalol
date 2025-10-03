@@ -1,10 +1,12 @@
 using Manatalol.Application.DTO.Candidates;
 using Manatalol.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace Manatalol.App.Pages.Candidates
 {
+    [Authorize]
     public class UpdateModel : PageModel
     {
         private readonly ICandidateService _candidateService;

@@ -50,6 +50,12 @@ namespace Manatalol.Infrastructure.Repositories
             return new PageResult<Candidate>(candidatePaged, totalItems, pageNumber, pageSize);
         }
 
+        public async Task<Candidate?> GetCandidate(string reference)
+        {
+            return await _context.Candidates
+                .FirstOrDefaultAsync(c => c.Reference == reference);
+        }
+
         public async Task<Candidate?> GetCandidateDetails(string reference)
         {
             return await _context.Candidates

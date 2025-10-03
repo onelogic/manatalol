@@ -10,15 +10,17 @@ namespace Manatalol.Application.DTO.Candidates
     {
         public string LastName { get; set; } = string.Empty;
         public string FirstName { get; set; } = string.Empty;
-        public string? Reference { get; set; } = string.Empty;
+        public string? Reference { get; set; }
         public string? ProfilePictureUrl { get; set; }
         public Gender Gender { get; set; }
-        public string? CurrentCompany { get; set; } = string.Empty;
-        public string? Location { get; set; } = string.Empty;
+        public string? CurrentCompany { get; set; }
+        public string? Location { get; set; }
         public string? Email { get; set; }
 
         public string? PhoneNumber { get; set; }
-        public string? Function { get; set; } = string.Empty;
+        public string? Function { get; set; }
+        public string? Summary { get; set; }
+
         public string? LinkedinUrl { get; set; }
         public string CreatedBy { get; set; } = string.Empty;
         public SourceType Source { get; set; }

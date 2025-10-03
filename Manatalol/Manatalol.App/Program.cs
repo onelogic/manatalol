@@ -29,10 +29,21 @@ builder.Services.ConfigureApplicationCookie(options =>
     };
 });
 
-// Add services to the container.
-builder.Services.AddRazorPages();
 builder.Services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, CustomUserClaimsPrincipalFactory>();
+builder.Services.AddControllers();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+builder.Services.AddRazorPages();
+builder.Services.AddAuthentication();
 
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
@@ -57,6 +68,7 @@ else
 app.UseHttpsRedirection();
 
 app.UseRouting();
+app.UseCors("AllowAll");
 
 app.UseAuthentication();
 app.UseAuthorization();

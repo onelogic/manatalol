@@ -94,24 +94,32 @@ namespace Manatalol.Application.Services
 
         public async Task<string> CreateCandidateViaLinkedinUrl(string url, string createdBy)
         {
-            var profile = await _linkedinService.GetProfileAsync(url);
-            if (profile == null)
+            try
             {
-                throw new ApplicationException("Unable to fetch LinkedIn profile data.");
+                var profile = await _linkedinService.GetProfileAsync(url);
+                if (profile == null)
+                {
+                    throw new ApplicationException("Unable to fetch LinkedIn profile data.");
+                }
+                var candidat = profile.ToCandidate(createdBy);
+                candidat.LinkedinUrl = url;
+                var existEmail = await _candidateRepository.CheckExistCandidat(candidat);
+                if (existEmail == true)
+                {
+                    throw new ApplicationException("There are already a candidat with this email address");
+                }
+                await _candidateRepository.CreateCandidate(candidat);
+                return candidat.Reference;
             }
-            var candidat = profile.ToCandidate(createdBy);
-            var existEmail = await _candidateRepository.CheckExistCandidat(candidat);
-            if (existEmail == true)
+            catch(Exception ex)
             {
-                throw new ApplicationException("There already exists a candidat with this email address");
+                throw new ApplicationException(ex.Message);
             }
-            await _candidateRepository.CreateCandidate(candidat);
-            return candidat.Reference;
         }
 
         public async Task DeleteCandidate(string reference)
         {
-            var candidate = await _candidateRepository.GetCandidateDetails(reference);
+            var candidate = await _candidateRepository.GetCandidate(reference);
             if (candidate == null)
             {
                 throw new ApplicationException("Candidat not found");

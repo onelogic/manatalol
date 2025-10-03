@@ -21,7 +21,7 @@ namespace Manatalol.App.Pages.Candidates
             _userManager = userManager;
         }
 
-        public PageResult<CandidateDto> Candidates { get; set; }
+        public PageResult<CandidateDto> Candidates { get; set; } = new(new List<CandidateDto>(), 0, 10, 0); 
 
         [BindProperty(SupportsGet = true)]
         public string? Search { get; set; }

@@ -39,6 +39,10 @@ namespace Manatalol.Application.DTO.Api
 
         [JsonPropertyName("skills")]
         public List<string> Skills { get; set; }
+        
+        [JsonPropertyName("personal_emails")]
+        public List<string> Emails { get; set; }
+
     }
 
     public class LinkedinExperience

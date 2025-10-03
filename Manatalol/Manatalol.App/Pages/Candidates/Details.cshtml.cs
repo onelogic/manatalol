@@ -2,12 +2,14 @@ using Manatalol.App.Data;
 using Manatalol.Application.DTO.Candidates;
 using Manatalol.Application.DTO.Notes;
 using Manatalol.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace Manatalol.App.Pages.Candidates
 {
+    [Authorize]
     public class DetailsModel : PageModel
     {
         private readonly ICandidateService _candidateService;

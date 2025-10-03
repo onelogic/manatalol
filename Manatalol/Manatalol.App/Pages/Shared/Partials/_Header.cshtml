@@ -37,7 +37,7 @@
         <div class="dropdown-divider m-0"></div>
         @if (User.Identity.IsAuthenticated)
         {
-            <form asp-controller="Account" asp-action="Logout" method="post" class="dropdown-item py-3 fw-500 d-flex justify-content-between">
+            <form asp-page="/Auth/Logout" method="post" class="dropdown-item py-3 fw-500 d-flex justify-content-between">
                 @Html.AntiForgeryToken()
                 <button type="submit" class="btn border-0">Logout</button>
             </form>
