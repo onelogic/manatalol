@@ -13,10 +13,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Load environment variables from .env
+      - name: Load environment variables
         run: |
           Get-Content .env | ForEach-Object {
-            if ($_ -match '^\s*$') { return }  # skip lignes vides
+            if ($_ -match '^\s*$') { return }
             $name, $value = $_ -split '=', 2
             echo "$name=$value" >> $env:GITHUB_ENV
           }
@@ -26,57 +26,60 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
-      - name: Restore dependencies
-        run: dotnet restore
-
-      - name: Build
-        run: dotnet build --configuration Release --no-restore
-
-      - name: Publish
-        run: dotnet publish -c Release -o published
+      - name: Build and publish
+        run: |
+          dotnet restore
+          dotnet build --configuration Release --no-restore
+          dotnet publish -c Release -o published
 
       - name: Package app
         run: Compress-Archive -Path published\* -DestinationPath app.zip -Force
 
-      - name: Install WinRM module
+      - name: Deploy to Windows VM
         shell: pwsh
-        run: Install-Module -Name PSWSMan -Force -Scope CurrentUser
+        run: |
+          $hostname = "${{ env.VM_HOST }}"
+          $username = "${{ env.VM_USERNAME }}"
+          $password = "${{ env.VM_PASSWORD }}"
+          $deployPath = "${{ env.DEPLOY_PATH }}"
+          $serviceName = "${{ env.SERVICE_NAME }}"
+          $localZip = "app.zip"
+          $remoteZip = "C:\\temp\\app.zip"
 
-      - name: Deploy to Windows VM via WinRM
-        uses: microsoft-devlabs/powershell-winrm@v2
-        with:
-          host: ${{ env.VM_HOST }}
-          username: ${{ env.VM_USERNAME }}
-          password: ${{ env.VM_PASSWORD }}
-          port: 5986
-          protocol: https
-          script: |
-            Write-Host "🚀 Déploiement sur $env:COMPUTERNAME..."
-            $remoteZip = "C:\temp\app.zip"
-            $deployPath = "${{ env.DEPLOY_PATH }}"
-            $serviceName = "${{ env.SERVICE_NAME }}"
+          Write-Host "🟢 Connexion à $hostname via WinRM..."
 
-            # Créer les dossiers si besoin
-            New-Item -ItemType Directory -Force -Path "C:\temp" | Out-Null
-            New-Item -ItemType Directory -Force -Path $deployPath | Out-Null
+          # Création de la session WinRM (port 5986 HTTPS)
+          $secPassword = ConvertTo-SecureString $password -AsPlainText -Force
+          $cred = New-Object System.Management.Automation.PSCredential ($username, $secPassword)
+          $session = New-PSSession -ComputerName $hostname -Credential $cred -UseSSL -SessionOption (New-PSSessionOption -SkipCACheck -SkipCNCheck)
 
-            # Copier le fichier du runner
-            Copy-Item -Path "${{ github.workspace }}\app.zip" -Destination $remoteZip -Force
+          # Transfert du fichier ZIP
+          Write-Host "📤 Transfert du package vers la VM..."
+          Invoke-Command -Session $session -ScriptBlock {
+              New-Item -ItemType Directory -Force -Path "C:\temp" | Out-Null
+          }
+          Copy-Item -Path $localZip -Destination $remoteZip -ToSession $session -Force
 
-            # Stopper le service s'il existe
-            if (Get-Service -Name $serviceName -ErrorAction SilentlyContinue) {
-              Write-Host "⏸️  Arrêt du service $serviceName"
-              Stop-Service -Name $serviceName -Force
-            }
+          # Déploiement distant
+          Write-Host "⚙️ Déploiement sur la VM..."
+          Invoke-Command -Session $session -ScriptBlock {
+              param($remoteZip, $deployPath, $serviceName)
+              
+              Write-Host "📦 Extraction du package..."
+              New-Item -ItemType Directory -Force -Path $deployPath | Out-Null
 
-            # Décompresser et écraser les anciens fichiers
-            Write-Host "📦 Extraction du package..."
-            Expand-Archive -Path $remoteZip -DestinationPath $deployPath -Force
+              if (Test-Path $remoteZip) {
+                  Expand-Archive -Path $remoteZip -DestinationPath $deployPath -Force
+              }
 
-            # Redémarrer le service
-            if (Get-Service -Name $serviceName -ErrorAction SilentlyContinue) {
-              Write-Host "▶️ Démarrage du service $serviceName"
-              Start-Service -Name $serviceName
-            }
+              if (Get-Service -Name $serviceName -ErrorAction SilentlyContinue) {
+                  Write-Host "🔄 Redémarrage du service $serviceName..."
+                  Restart-Service -Name $serviceName -Force
+              } else {
+                  Write-Host "⚠️ Service $serviceName introuvable, aucun redémarrage effectué."
+              }
+          } -ArgumentList $remoteZip, $deployPath, $serviceName
 
-            Write-Host "✅ Déploiement terminé avec succès."
+          # Fermeture de la session
+          Remove-PSSession $session
+          Write-Host "✅ Déploiement terminé avec succès !"
