@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", async () => {
      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
      const linkedinUrl = tab.url;
 
-    if (!linkedinUrl.includes("linkedin.com")) {
+    if (!linkedinUrl.includes("linkedin.com/in/")) {
       document.getElementById("sendApi").disabled = true;
     }
     else{
@@ -18,18 +18,19 @@ btn.addEventListener("click", async () => {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     const linkedinUrl = tab.url;
 
-    if (!linkedinUrl.includes("linkedin.com")) {
+    if (!linkedinUrl.includes("linkedin.com/in/")) {
       document.getElementById("result").innerText = "Missing Linkedin Url";
       return;
     }
 
    fetch("https://localhost:7290/api/linkedin", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+       headers: {
+        "Content-Type": "application/json"
+      },
       body: JSON.stringify({ url: linkedinUrl })
     })
     .then(async (response) => {
-      console.log(response);
       btn.textContent= "Send to ManatalOl";
       btn.disabled= false;
       if (!response.ok) {
@@ -42,7 +43,7 @@ btn.addEventListener("click", async () => {
     .catch((error) => {
       btn.textContent= "Send to ManatalOl";
       btn.disabled= false;
-      result.innerText = error.message;
+      result.innerText = JSON.parse(error.message)?.message;
       result.style.color = '#e64242';
   });
 });

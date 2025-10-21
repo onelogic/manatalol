@@ -11,7 +11,7 @@ namespace Manatalol.Application.Services
     {
         private readonly HttpClient _httpClient;
         private readonly EnrichLayerApi _enrichLayerApi;
-
+         
         public LinkedinService(HttpClient httpClient, EnrichLayerApi enrichLayerApi)
         {
             _httpClient = httpClient;

@@ -1,0 +1,7 @@
+﻿namespace Manatalol.Application.Interfaces
+{
+    public interface IEmailSender
+    {
+       Task SendEmailAsync(string email, string subject, string link, string sendTo);
+    }
+}

@@ -90,7 +90,7 @@
                                     <svg class="sa-icon me-2">
                                         <use href="@Url.Content("~/icons/sprite.svg#save")"></use>
                                     </svg>
-                                    Notes
+                                    <div style="position: relative">Notes <span class="badge badge-icon pos-top pos-end">@candidate.NotesCount</span></div>
                                 </a>
                             </li>
                         </ul>
@@ -293,8 +293,6 @@
 
 @section scripts
 {
-    <script src="~/scripts/pages/profile.js"></script>
-
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const itemsPerPage = 5; // Nombre de notes par page

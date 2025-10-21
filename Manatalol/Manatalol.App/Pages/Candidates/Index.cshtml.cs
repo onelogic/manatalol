@@ -21,7 +21,7 @@ namespace Manatalol.App.Pages.Candidates
             _userManager = userManager;
         }
 
-        public PageResult<CandidateDto> Candidates { get; set; } = new(new List<CandidateDto>(), 0, 10, 0); 
+        public PageResult<CandidateDto> Candidates { get; set; } = new(new List<CandidateDto>(), 0, 10, 0);
 
         [BindProperty(SupportsGet = true)]
         public string? Search { get; set; }
@@ -32,10 +32,10 @@ namespace Manatalol.App.Pages.Candidates
         public int PageSize { get; set; } = 10;
 
         [BindProperty(SupportsGet = true)]
-        public string SortBy { get; set; } = "firstname";
+        public string? SortBy { get; set; } = "firstname";
 
         [BindProperty(SupportsGet = true)]
-        public string SortDirection { get; set; } = "asc";
+        public string? SortDirection { get; set; } = "asc";
 
         public async Task OnGetAsync()
         {
@@ -68,35 +68,43 @@ namespace Manatalol.App.Pages.Candidates
             return new JsonResult(candidates);
         }
 
-        [BindProperty]
+        [BindProperty] 
         public List<IFormFile> PdfFiles { get; set; }
         public async Task<IActionResult> OnPostUploadAsync()
         {
-            var user = await _userManager.GetUserAsync(User);
-            var reference = "";
-
-            if (PdfFiles == null || PdfFiles.Count == 0)
+            try
             {
-                ModelState.AddModelError("", "Veuillez sélectionner au moins un fichier PDF.");
+                var user = await _userManager.GetUserAsync(User);
+                var reference = "";
+
+                if (PdfFiles == null || PdfFiles.Count == 0)
+                {
+                    ModelState.AddModelError("", "Veuillez sélectionner au moins un fichier PDF.");
+                    return Page();
+                }
+
+                foreach (var file in PdfFiles)
+                {
+                    if (file.Length > 0)
+                    {
+                        using var stream = new MemoryStream();
+                        await file.CopyToAsync(stream);
+                        var pdfBytes = stream.ToArray();
+
+                        reference = await _candidateService.SaveCandidateViaUpload(pdfBytes, user.FullName);
+                    }
+                }
+                return RedirectToPage("/Candidates/Details", new { CandidateReference = reference });
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError(string.Empty, ex.Message);
                 return Page();
             }
-
-            foreach (var file in PdfFiles)
-            {
-                if (file.Length > 0)
-                {
-                    using var stream = new MemoryStream();
-                    await file.CopyToAsync(stream);
-                    var pdfBytes = stream.ToArray();
-
-                    reference = await _candidateService.SaveCandidateViaUpload(pdfBytes, user.FullName);
-                }
-            }
-            return RedirectToPage("/Candidates/Details", new { CandidateReference = reference });
         }
 
         [BindProperty]
-        public string LinkedinUrl { get; set; }
+        public string? LinkedinUrl { get; set; }
         public async Task<IActionResult> OnPostLinkedinUrlAsync()
         {
             var user = await _userManager.GetUserAsync(User);

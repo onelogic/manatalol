@@ -5,122 +5,134 @@
     ViewBag.Title = "Index";
 }
 
-<div class="main-content">
-    <div class="d-flex justify-content-between mb-3">
-        <form method="get" class="d-flex">
-            <input type="text" name="Search" value="@Model.Search" placeholder="Search..." class="form-control me-2" />
-            <button type="submit" class="btn btn-md btn-outline-secondary d-flex justify-content-center align-self-center align-items-center">
-                <span class="fal fa-search me-1"></span> Search
-            </button>
-        </form>
-
-        <button class="btn btn-md btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#exampleModal">
-            <span class="fal fa-plus me-1"></span>
-            Create candidate
+@if (!Model.ModelState.IsValid)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
+            <i class="bi bi-trash"></i>
         </button>
+        <div asp-validation-summary="All"></div>
     </div>
+}
+else
+{
+    <div class="main-content">
+        <div class="d-flex justify-content-between mb-3">
+            <form method="get" class="d-flex">
+                <input type="text" name="Search" value="@Model.Search" placeholder="Search..." class="form-control me-2" />
+                <button type="submit" class="btn btn-md btn-outline-secondary d-flex justify-content-center align-self-center align-items-center">
+                    <span class="fal fa-search me-1"></span> Search
+                </button>
+            </form>
 
-    <div class="row mt-4">
-        <div class="col-lg-12">
-            <table class="st-table table table-striped table-hover st-responsive" id="myTable">
-                <thead>
-                    <tr>
-                        <th>
-                            <a asp-page="./Index"
-                               asp-route-Search="@Model.Search"
-                               asp-route-SortBy="firstname"
-                               asp-route-SortDirection="@(Model.SortBy == "firstname" && Model.SortDirection == "asc" ? "desc" : "asc")"
-                               class="text-decoration-none">
-                                Candidate Name
-                                @if (Model.SortBy == "firstname")
-                                {
+            <button class="btn btn-md btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                <span class="fal fa-plus me-1"></span>
+                Create candidate
+            </button>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-lg-12">
+                <table class="st-table table table-striped table-hover st-responsive" id="myTable">
+                    <thead>
+                        <tr>
+                            <th>
+                                <a asp-page="./Index"
+                                   asp-route-Search="@Model.Search"
+                                   asp-route-SortBy="firstname"
+                                   asp-route-SortDirection="@(Model.SortBy == "firstname" && Model.SortDirection == "asc" ? "desc" : "asc")"
+                                   class="text-decoration-none">
+                                    Candidate Name
+                                    @if (Model.SortBy == "firstname")
+                                    {
                                 <span>
                                     @Html.Raw(Model.SortDirection == "asc"
                                                                         ? "<i class='fal fa-chevron-up'></i>"
                                                                         : "<i class='fal fa-chevron-down'></i>")
                                 </span>
                                                                 }
-                            </a>
-                        </th>
-                        <th>Location</th>
-                        <th>Function</th>
-                        <th>Product Owner</th>
-                        <th>Source</th>
-                        <th>Note</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var candidate in Model.Candidates.Items)
-                    {
-                        <tr>
-                            <td>
-                                <div class="d-flex align-items-center" style="text-wrap: auto;">
-                                    @if (!string.IsNullOrEmpty(candidate.ProfilePictureUrl))
-                                    {
-                                        <img src="@candidate.ProfilePictureUrl" class="ma-img ma-avatar me-1" />
-                                    }
-                                    else
-                                    {
-                                        <div class="ma-avatar me-1 bg-secondary">@candidate.FirstName.Substring(0, 2)</div>
-                                    }
-                                    <a href="/details/@candidate.Reference">@candidate.FirstName @candidate.LastName</a>
-                                </div>
-                            </td>
-                            <td>
-                                <div style="text-wrap: auto;">@candidate.Location</div>
-                            </td>
-                            <td><p style="text-wrap: auto;">@candidate.Function</p></td>
-                            <td>@candidate.CreatedBy</td>
-                            <td>@candidate.Source</td>
-                            <td>@candidate.NotesCount</td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <a href="/details/@candidate.Reference" class="me-1">
-                                        <svg class="sa-icon me-2 inline-text">
-                                            <use href="@Url.Content("~/icons/sprite.svg#eye")" style="stroke:#2196F3"></use>
-                                        </svg>
-                                    </a>
-                                    <a href="/update/@candidate.Reference">
-                                        <svg class="sa-icon me-2 inline-text">
-                                            <use href="@Url.Content("~/icons/sprite.svg#edit-3")" style="stroke:#886ab5"></use>
-                                        </svg>
-                                    </a>
-                                    <a href="" data-bs-target="#delete-candidate-modal"
-                                       data-bs-toggle="modal"
-                                       data-reference="@candidate.Reference"
-                                       data-notes="@candidate.NotesCount">
-                                        <svg class="sa-icon me-2 inline-text">
-                                            <use href="@Url.Content("~/icons/sprite.svg#trash")" style="stroke:#fc077a"></use>
-                                        </svg>
-                                    </a>
-                                </div>
-                            </td>
+                                </a>
+                            </th>
+                            <th>Location</th>
+                            <th>Function</th>
+                            <th>Product Owner</th>
+                            <th>Source</th>
+                            <th>Note</th>
+                            <th>Actions</th>
                         </tr>
-                    }
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        @foreach (var candidate in Model.Candidates.Items)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center" style="text-wrap: auto;">
+                                        @if (!string.IsNullOrEmpty(candidate.ProfilePictureUrl))
+                                        {
+                                            <img src="@candidate.ProfilePictureUrl" class="ma-img ma-avatar me-1" />
+                                        }
+                                        else
+                                        {
+                                            <div class="ma-avatar me-1 bg-secondary">@candidate.FirstName.Substring(0, 2)</div>
+                                        }
+                                        <a href="/details/@candidate.Reference">@candidate.FirstName @candidate.LastName</a>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="text-wrap: auto;">@candidate.Location</div>
+                                </td>
+                                <td><p style="text-wrap: auto;">@candidate.Function</p></td>
+                                <td>@candidate.CreatedBy</td>
+                                <td>@candidate.Source</td>
+                                <td>@candidate.NotesCount</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <a href="/details/@candidate.Reference" class="me-1">
+                                            <svg class="sa-icon me-2 inline-text">
+                                                <use href="@Url.Content("~/icons/sprite.svg#eye")" style="stroke:#2196F3"></use>
+                                            </svg>
+                                        </a>
+                                        <a href="/update/@candidate.Reference">
+                                            <svg class="sa-icon me-2 inline-text">
+                                                <use href="@Url.Content("~/icons/sprite.svg#edit-3")" style="stroke:#886ab5"></use>
+                                            </svg>
+                                        </a>
+                                        <a href="" data-bs-target="#delete-candidate-modal"
+                                           data-bs-toggle="modal"
+                                           data-reference="@candidate.Reference"
+                                           data-notes="@candidate.NotesCount">
+                                            <svg class="sa-icon me-2 inline-text">
+                                                <use href="@Url.Content("~/icons/sprite.svg#trash")" style="stroke:#fc077a"></use>
+                                            </svg>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
 
-            <!-- Pagination -->
-            <nav class="d-flex justify-content-end">
-                <ul class="pagination">
-                    @for (int i = 0; i < Math.Ceiling((double)Model.Candidates.TotalItems / Model.Candidates.PageSize); i++)
-                    {
-                        <li class="page-item @(i == Model.Candidates.PageNumber ? "active" : "")">
-                            <a class="page-link"
-                               asp-page="./Index"
-                               asp-route-PageNumber="@i"
-                               asp-route-Search="@Model.Search"
-                               asp-route-SortOrder="@Model.SortDirection">
-                                @(i + 1)
-                            </a>
-                        </li>
-                    }
-                </ul>
-            </nav>
+                <!-- Pagination -->
+                <nav class="d-flex justify-content-end">
+                    <ul class="pagination">
+                        @for (int i = 0; i < Math.Ceiling((double)Model.Candidates.TotalItems / Model.Candidates.PageSize); i++)
+                        {
+                            <li class="page-item @(i == Model.Candidates.PageNumber ? "active" : "")">
+                                <a class="page-link"
+                                   asp-page="./Index"
+                                   asp-route-PageNumber="@i"
+                                   asp-route-Search="@Model.Search"
+                                   asp-route-SortOrder="@Model.SortDirection">
+                                    @(i + 1)
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+            </div>
         </div>
     </div>
-</div>
+}
 <!-- Create Candidate Container -->
 <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog">

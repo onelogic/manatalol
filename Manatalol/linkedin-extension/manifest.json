@@ -1,6 +1,6 @@
 {
   "name": "ManatalOl Extension",
-  "description": "Send URL Linkedin to the ManatalOl application",
+  "description": "Send LinkedIn profile URL to the ManatalOl application",
   "version": "1.0",
   "manifest_version": 3,
   "permissions": ["tabs"],

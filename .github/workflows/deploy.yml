@@ -1,0 +1,47 @@
+name: Build & Deploy .NET App to Windows VM
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+
+    - name: Publish
+      run: dotnet publish -c Release -o ./publish
+
+    - name: Deploy to remote Windows VM
+      uses: microsoft/powershell@v1
+      with:
+        inlineScript: |
+          $User = "${{ secrets.VM_USERNAME }}"
+          $Pass = ConvertTo-SecureString "${{ secrets.VM_PASSWORD }}" -AsPlainText -Force
+          $Cred = New-Object System.Management.Automation.PSCredential ($User, $Pass)
+
+          $Session = New-PSSession -ComputerName "${{ secrets.VM_HOST }}" -Credential $Cred -UseSSL -SessionOption (New-PSSessionOption -SkipCACheck -SkipCNCheck)
+          
+          Copy-Item -Path "./publish/*" -Destination "${{ secrets.VM_APP_PATH }}" -Recurse -ToSession $Session -Force
+
+          # Optionnel : redémarrer le site IIS
+          Invoke-Command -Session $Session -ScriptBlock {
+            Import-Module WebAdministration
+            Restart-WebAppPool "DefaultAppPool"
+          }
+
+          Remove-PSSession $Session
