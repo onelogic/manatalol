@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-and-deploy:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
@@ -15,11 +15,9 @@ jobs:
 
       - name: Load environment variables
         run: |
-          Get-Content .env | ForEach-Object {
-            if ($_ -match '^\s*$') { return }
-            $name, $value = $_ -split '=', 2
-            echo "$name=$value" >> $env:GITHUB_ENV
-          }
+          set -a
+          source .env
+          set +a
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -34,15 +32,18 @@ jobs:
 
       - name: Verify published output
         run: |
-          if (-Not (Test-Path "./output/published")) {
-            Write-Host "❌ Le dossier ./output/published est introuvable."
+          if [ ! -d "./output/published" ]; then
+            echo "❌ Le dossier ./output/published est introuvable."
             exit 1
-          } else {
-            Write-Host "✅ Dossier publié trouvé."
-          }
+          else
+            echo "✅ Dossier publié trouvé."
+          fi
 
       - name: Package app
-        run: Compress-Archive -Path ./output/published/* -DestinationPath Manatalol.zip -Force
+        run: |
+          cd ./output
+          zip -r ../Manatalol.zip published
+          cd ..
 
       - name: Upload package to VM
         uses: appleboy/scp-action@v0.1.7
