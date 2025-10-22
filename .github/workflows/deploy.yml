@@ -45,7 +45,7 @@ jobs:
           username: ${{ env.VM_USERNAME }}
           password: ${{ env.VM_PASSWORD }}
           source: "Manatalol.zip"
-          target: C:/temp/
+          target: C:/manatalol/
 
       - name: Deploy & Restart service
         uses: appleboy/ssh-action@v0.1.7
