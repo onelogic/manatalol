@@ -16,6 +16,7 @@ jobs:
       - name: Load .env variables
         shell: pwsh
         run: |
+          Write-Host "Loading .env variables..."
           if (Test-Path ".env") {
               Get-Content .env | ForEach-Object {
                   if ($_ -match '^\s*$') { return }
@@ -27,11 +28,10 @@ jobs:
               exit 1
           }
 
-
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: 9.0.x
 
       - name: Build and Publish
         shell: pwsh
@@ -45,7 +45,7 @@ jobs:
       - name: Package app
         shell: pwsh
         run: |
-          $tempPath = "C:\manatalol"
+          $tempPath = "C:\temp"
           if (!(Test-Path $tempPath)) { New-Item -ItemType Directory -Path $tempPath | Out-Null }
           Compress-Archive -Path ./output/published/* -DestinationPath "$tempPath\Manatalol.zip" -Force
           Write-Host "Package created at $tempPath\Manatalol.zip"
@@ -59,7 +59,13 @@ jobs:
 
           # Create remote session
           Write-Host "Creating PowerShell session..."
-          $session = New-PSSession -ComputerName $env:VM_HOST -Credential $cred -UseSSL -SessionOption (New-PSSessionOption -SkipCACheck -SkipCNCheck) -ErrorAction Stop
+          $session = New-PSSession -ComputerName $env:VM_HOST `
+                                   -Credential $cred `
+                                   -Port 5985 `
+                                   -Authentication Basic `
+                                   -UseSSL:$false `
+                                   -SessionOption (New-PSSessionOption -SkipCACheck -SkipCNCheck) `
+                                   -ErrorAction Stop
 
           # Copy package
           Write-Host "Copying ZIP to remote machine..."
