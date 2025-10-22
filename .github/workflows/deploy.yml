@@ -16,7 +16,7 @@ jobs:
       - name: Load environment variables
         run: |
           Get-Content .env | ForEach-Object {
-            if ($_ -match '^\s*$') { return }
+            if ($_ -match '^\s*$') { renturn }
             $name, $value = $_ -split '=', 2
             echo "$name=$value" >> $env:GITHUB_ENV
           }
@@ -28,6 +28,7 @@ jobs:
 
       - name: Build and publish
         run: |
+          cd Manatalol
           dotnet restore
           dotnet build --configuration Release --no-restore
           dotnet publish -c Release -o published
