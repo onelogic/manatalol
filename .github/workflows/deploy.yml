@@ -1,4 +1,4 @@
-name: Build & Deploy .NET App to Windows VM (via SSH)
+name: Build & Deploy .NET App to Windows VM (via WinRM)
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
       - name: Checkout code
@@ -15,16 +15,16 @@ jobs:
 
       - name: Load environment variables
         run: |
-          set -a
-          source .env
-          set +a
-          # injecter pour GitHub Actions
-          cat .env >> $GITHUB_ENV
+          Get-Content .env | ForEach-Object {
+            if ($_ -match '^\s*$') { return }
+            $name, $value = $_ -split '=', 2
+            echo "$name=$value" >> $env:GITHUB_ENV
+          }
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 9.0.x
+          dotnet-version: 8.0.x
 
       - name: Build and Publish
         run: |
@@ -34,49 +34,40 @@ jobs:
 
       - name: Verify published output
         run: |
-          if [ ! -d "./output/published" ]; then
-            echo "❌ Le dossier ./output/published est introuvable."
+          if (-Not (Test-Path "./output/published")) {
+            Write-Host "❌ Le dossier ./output/published est introuvable."
             exit 1
-          else
-            echo "✅ Dossier publié trouvé."
-          fi
+          } else {
+            Write-Host "✅ Dossier publié trouvé."
+          }
 
       - name: Package app
-        run: |
-          cd ./output
-          zip -r ../Manatalol.zip published
-          cd ..
-
-      - name: Upload package to VM
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ env.VM_HOST }}
-          username: ${{ env.VM_USERNAME }}
-          password: ${{ env.VM_PASSWORD }}
-          source: "Manatalol.zip"
-          target: "C:/temp/Manatalol.zip"
+        run: Compress-Archive -Path ./output/published/* -DestinationPath Manatalol.zip -Force
 
       - name: Deploy & Restart service
-        uses: appleboy/ssh-action@v0.1.7
-        with:
-          host: ${{ env.VM_HOST }}
-          username: ${{ env.VM_USERNAME }}
-          password: ${{ env.VM_PASSWORD }}
-          script: |
-            $remoteZip = "C:\temp\Manatalol.zip"
-            $deployPath = "${{ env.DEPLOY_PATH }}"
-            $serviceName = "${{ env.SERVICE_NAME }}"
+        shell: pwsh
+        run: |
+          $vmHost = $env:VM_HOST
+          $vmUser = $env:VM_USERNAME
+          $vmPass = $env:VM_PASSWORD | ConvertTo-SecureString -AsPlainText -Force
+          $cred = New-Object System.Management.Automation.PSCredential ($vmUser, $vmPass)
 
-            Write-Host "📦 Extraction du package vers $deployPath..."
-            if (Test-Path $deployPath) { Remove-Item -Recurse -Force $deployPath }
-            New-Item -ItemType Directory -Force -Path $deployPath | Out-Null
-            Expand-Archive -Path $remoteZip -DestinationPath $deployPath -Force
+          Invoke-Command -ComputerName $vmHost -Credential $cred -ScriptBlock {
+              param($zipPath, $deployPath, $serviceName)
 
-            if (Get-Service -Name $serviceName -ErrorAction SilentlyContinue) {
-              Write-Host "🔄 Redémarrage du service $serviceName..."
-              Restart-Service -Name $serviceName -Force
-            } else {
-              Write-Host "⚠️ Service $serviceName introuvable, aucun redémarrage effectué."
-            }
+              Write-Host "📦 Copie et extraction du package..."
+              Copy-Item -Path "C:\Users\runneradmin\actions-runner\_work\manatalol\manatalol\Manatalol.zip" -Destination "C:\temp\Manatalol.zip" -Force
+              
+              if (Test-Path $deployPath) { Remove-Item -Recurse -Force $deployPath }
+              New-Item -ItemType Directory -Force -Path $deployPath | Out-Null
+              Expand-Archive -Path "C:\temp\Manatalol.zip" -DestinationPath $deployPath -Force
 
-            Write-Host "✅ Déploiement terminé avec succès."
+              if (Get-Service -Name $serviceName -ErrorAction SilentlyContinue) {
+                Write-Host "🔄 Redémarrage du service $serviceName..."
+                Restart-Service -Name $serviceName -Force
+              } else {
+                Write-Host "⚠️ Service $serviceName introuvable, aucun redémarrage effectué."
+              }
+
+              Write-Host "✅ Déploiement terminé."
+          } -ArgumentList "C:\temp\Manatalol.zip", $env:DEPLOY_PATH, $env:SERVICE_NAME
