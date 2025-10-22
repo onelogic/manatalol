@@ -9,17 +9,25 @@ jobs:
   build-and-deploy:
     runs-on: windows-latest
 
-    env:
-      host: ${{ secrets.VM_HOST }}
-      username: ${{ secrets.VM_USERNAME }}
-      password: ${{ secrets.VM_PASSWORD }}
-      DEPLOY_PATH: C:\inetpub\wwwroot\Manatalol
-      TEMP_PATH: C:\manatalol
-      SITE_NAME: "Manatalol"
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Load .env variables
+        shell: pwsh
+        run: |
+          Write-Host "Loading .env variables..."
+          if (Test-Path ".env") {
+              Get-Content .env | ForEach-Object {
+                  if ($_ -match '^\s*$') { return }
+                  $parts = $_ -split '=', 2
+                  Write-Host "Setting env variable: $($parts[0])"
+                  [System.Environment]::SetEnvironmentVariable($parts[0], $parts[1])
+              }
+          } else {
+              Write-Host ".env file not found!"
+              exit 1
+          }
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -29,21 +37,21 @@ jobs:
       - name: Build and Publish
         shell: pwsh
         run: |
-          Write-Host "📦 Publishing project..."
+          Write-Host "Publishing project..."
           dotnet restore Manatalol/Manatalol.App/Manatalol.App.csproj
           dotnet build Manatalol/Manatalol.App/Manatalol.App.csproj -c Release --no-restore
           dotnet publish Manatalol/Manatalol.App/Manatalol.App.csproj -c Release -o ./output/published
-          Write-Host "✅ Build & publish completed."
+          Write-Host "Build & publish completed."
 
       - name: Package app
         shell: pwsh
         run: |
-          Write-Host "Creating ZIP package..."
-          if (!(Test-Path $env:TEMP_PATH)) { New-Item -ItemType Directory -Path $env:TEMP_PATH | Out-Null }
-          Compress-Archive -Path ./output/published/* -DestinationPath "$($env:TEMP_PATH)\Manatalol.zip" -Force
-          Write-Host "✅ Package created at $($env:TEMP_PATH)\Manatalol.zip"
+          $tempPath = "C:\manatalol"
+          if (!(Test-Path $tempPath)) { New-Item -ItemType Directory -Path $tempPath | Out-Null }
+          Compress-Archive -Path ./output/published/* -DestinationPath "$tempPath\Manatalol.zip" -Force
+          Write-Host "Package created at $tempPath\Manatalol.zip"
 
-      - name: Deploy to VM
+      - name: Deploy to Windows VM
         shell: pwsh
         run: |
           Write-Host "Starting deployment to $env:VM_HOST..."
@@ -56,7 +64,7 @@ jobs:
 
           # Copy package
           Write-Host "Copying ZIP to remote machine..."
-          Copy-Item -Path "$($env:TEMP_PATH)\Manatalol.zip" -Destination "$($env:TEMP_PATH)\Manatalol.zip" -ToSession $session -Force
+          Copy-Item -Path "C:\manatalol\Manatalol.zip" -Destination "C:\manatalol\Manatalol.zip" -ToSession $session -Force
 
           # Deploy and extract
           Write-Host "Extracting package on remote VM..."
@@ -68,15 +76,15 @@ jobs:
 
               # Restart IIS site
               if (Get-Website -Name $siteName -ErrorAction SilentlyContinue) {
-                  Write-Host "🔄 Restarting IIS site $siteName..."
+                  Write-Host "Restarting IIS site $siteName..."
                   Stop-Website -Name $siteName
                   Start-Website -Name $siteName
               } else {
-                  Write-Host "⚠️ IIS site $siteName not found."
+                  Write-Host "IIS site $siteName not found."
               }
-              Write-Host "✅ Deployment completed."
-          } -ArgumentList $env:DEPLOY_PATH, "$($env:TEMP_PATH)\Manatalol.zip", $env:SITE_NAME
+              Write-Host "Deployment completed successfully."
+          } -ArgumentList "C:\inetpub\wwwroot\Manatalol", "C:\manatalol\Manatalol.zip", "Manatalol"
 
           # Close session
           Remove-PSSession $session
-          Write-Host "🚀 Deployment finished successfully."
+          Write-Host "Deployment finished!"
