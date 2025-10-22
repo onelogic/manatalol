@@ -1,4 +1,4 @@
-name: Build & Deploy .NET App to Windows VM (via WinRM)
+name: Build & Deploy .NET App to Windows VM via WinRM HTTPS
 
 on:
   push:
@@ -24,7 +24,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: 9.0.x
 
       - name: Build and Publish
         run: |
@@ -52,7 +52,10 @@ jobs:
           $vmPass = $env:VM_PASSWORD | ConvertTo-SecureString -AsPlainText -Force
           $cred = New-Object System.Management.Automation.PSCredential ($vmUser, $vmPass)
 
-          Invoke-Command -ComputerName $vmHost -Credential $cred -ScriptBlock {
+          # Conserver HTTPS avec port 5986 et Ignorer le certificat auto-signé
+          $session = New-PSSession -ComputerName $vmHost -Credential $cred -UseSSL -SessionOption (New-PSSessionOption -SkipCACheck -SkipCNCheck)
+
+          Invoke-Command -Session $session -ScriptBlock {
               param($zipPath, $deployPath, $serviceName)
 
               Write-Host "📦 Copie et extraction du package..."
@@ -71,3 +74,5 @@ jobs:
 
               Write-Host "✅ Déploiement terminé."
           } -ArgumentList "C:\temp\Manatalol.zip", $env:DEPLOY_PATH, $env:SERVICE_NAME
+
+          Remove-PSSession $session
