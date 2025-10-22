@@ -16,18 +16,17 @@ jobs:
       - name: Load .env variables
         shell: pwsh
         run: |
-          Write-Host "Loading .env variables..."
           if (Test-Path ".env") {
               Get-Content .env | ForEach-Object {
                   if ($_ -match '^\s*$') { return }
                   $parts = $_ -split '=', 2
-                  Write-Host "Setting env variable: $($parts[0])"
-                  [System.Environment]::SetEnvironmentVariable($parts[0], $parts[1])
+                  echo "$($parts[0])=$($parts[1])" >> $env:GITHUB_ENV
               }
           } else {
               Write-Host ".env file not found!"
               exit 1
           }
+
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
