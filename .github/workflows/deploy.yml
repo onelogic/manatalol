@@ -18,6 +18,8 @@ jobs:
           set -a
           source .env
           set +a
+          # injecter pour GitHub Actions
+          cat .env >> $GITHUB_ENV
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
