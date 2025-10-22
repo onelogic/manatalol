@@ -1,4 +1,4 @@
-name: Build & Deploy .NET App to Windows VM via SSH
+name: Build & Deploy .NET App to Windows VM via WinRM
 
 on:
   push:
@@ -7,23 +7,19 @@ on:
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
+
+    env:
+      host: ${{ secrets.VM_HOST }}
+      username: ${{ secrets.VM_USERNAME }}
+      password: ${{ secrets.VM_PASSWORD }}
+      DEPLOY_PATH: C:\inetpub\wwwroot\Manatalol
+      TEMP_PATH: C:\manatalol
+      SITE_NAME: "Manatalol"
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Load environment variables
-        id: envload
-        run: |
-          if [ -f .env ]; then
-            echo "Chargement du fichier .env"
-            while IFS='=' read -r name value; do
-              if [[ ! $name =~ ^# && -n $name ]]; then
-                echo "$name=$value" >> $GITHUB_ENV
-              fi
-            done < .env
-          fi
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -31,46 +27,56 @@ jobs:
           dotnet-version: 8.0.x
 
       - name: Build and Publish
+        shell: pwsh
         run: |
+          Write-Host "📦 Publishing project..."
           dotnet restore Manatalol/Manatalol.App/Manatalol.App.csproj
+          dotnet build Manatalol/Manatalol.App/Manatalol.App.csproj -c Release --no-restore
           dotnet publish Manatalol/Manatalol.App/Manatalol.App.csproj -c Release -o ./output/published
+          Write-Host "✅ Build & publish completed."
 
       - name: Package app
-        run: zip -r Manatalol.zip ./output/published
+        shell: pwsh
+        run: |
+          Write-Host "Creating ZIP package..."
+          if (!(Test-Path $env:TEMP_PATH)) { New-Item -ItemType Directory -Path $env:TEMP_PATH | Out-Null }
+          Compress-Archive -Path ./output/published/* -DestinationPath "$($env:TEMP_PATH)\Manatalol.zip" -Force
+          Write-Host "✅ Package created at $($env:TEMP_PATH)\Manatalol.zip"
 
-      - name: Upload package to VM via SCP
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ env.VM_HOST }}
-          username: ${{ env.VM_USERNAME }}
-          password: ${{ env.VM_PASSWORD }}
-          source: "Manatalol.zip"
-          target: C:/manatalol/
+      - name: Deploy to VM
+        shell: pwsh
+        run: |
+          Write-Host "Starting deployment to $env:VM_HOST..."
+          $secpasswd = ConvertTo-SecureString $env:VM_PASSWORD -AsPlainText -Force
+          $cred = New-Object System.Management.Automation.PSCredential ($env:VM_USERNAME, $secpasswd)
 
-      - name: Deploy & Restart service
-        uses: appleboy/ssh-action@v0.1.7
-        with:
-          host: ${{ env.VM_HOST }}
-          username: ${{ env.VM_USERNAME }}
-          password: ${{ env.VM_PASSWORD }}
-          script_stop: true
-          script: |
-            Write-Host "📦 Déploiement sur la VM Windows..."
-            $deployPath = "C:\inetpub\Manatalol"
-            $zipPath = "C:\temp\Manatalol.zip"
-            $serviceName = "ManatalolService"
+          # Create remote session
+          Write-Host "Creating PowerShell session..."
+          $session = New-PSSession -ComputerName $env:VM_HOST -Credential $cred -UseSSL -SessionOption (New-PSSessionOption -SkipCACheck -SkipCNCheck) -ErrorAction Stop
 
-            if (Test-Path $deployPath) { Remove-Item -Recurse -Force $deployPath }
-            New-Item -ItemType Directory -Force -Path $deployPath | Out-Null
+          # Copy package
+          Write-Host "Copying ZIP to remote machine..."
+          Copy-Item -Path "$($env:TEMP_PATH)\Manatalol.zip" -Destination "$($env:TEMP_PATH)\Manatalol.zip" -ToSession $session -Force
 
-            Expand-Archive -Path $zipPath -DestinationPath $deployPath -Force
-            Write-Host "✅ Application déployée dans $deployPath"
+          # Deploy and extract
+          Write-Host "Extracting package on remote VM..."
+          Invoke-Command -Session $session -ScriptBlock {
+              param($deployPath, $zipPath, $siteName)
+              if (Test-Path $deployPath) { Remove-Item -Recurse -Force $deployPath }
+              New-Item -ItemType Directory -Force -Path $deployPath | Out-Null
+              Expand-Archive -Path $zipPath -DestinationPath $deployPath -Force
 
-            if (Get-Service -Name $serviceName -ErrorAction SilentlyContinue) {
-              Write-Host "🔄 Redémarrage du service $serviceName..."
-              Restart-Service -Name $serviceName -Force
-            } else {
-              Write-Host "⚠️ Service $serviceName introuvable, aucun redémarrage effectué."
-            }
+              # Restart IIS site
+              if (Get-Website -Name $siteName -ErrorAction SilentlyContinue) {
+                  Write-Host "🔄 Restarting IIS site $siteName..."
+                  Stop-Website -Name $siteName
+                  Start-Website -Name $siteName
+              } else {
+                  Write-Host "⚠️ IIS site $siteName not found."
+              }
+              Write-Host "✅ Deployment completed."
+          } -ArgumentList $env:DEPLOY_PATH, "$($env:TEMP_PATH)\Manatalol.zip", $env:SITE_NAME
 
-            Write-Host "🚀 Déploiement terminé avec succès."
+          # Close session
+          Remove-PSSession $session
+          Write-Host "🚀 Deployment finished successfully."
