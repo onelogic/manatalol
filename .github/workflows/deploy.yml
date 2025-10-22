@@ -26,15 +26,24 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
-      - name: Build and publish
+      - name: Build and Publish
         run: |
-          cd Manatalol
-          dotnet restore
-          dotnet build --configuration Release --no-restore
-          dotnet publish -c Release -o published
+          dotnet restore Manatalol/Manatalol.App/Manatalol.App.csproj
+          dotnet build Manatalol/Manatalol.App/Manatalol.App.csproj --configuration Release --no-restore
+          dotnet publish Manatalol/Manatalol.App/Manatalol.App.csproj -c Release -o ./output/published
+
+      - name: Verify published output
+        run: |
+          if (-Not (Test-Path "./output/published")) {
+            Write-Host "❌ Le dossier ./output/published est introuvable."
+            exit 1
+          } else {
+            Write-Host "✅ Dossier publié trouvé."
+          }
 
       - name: Package app
-        run: Compress-Archive -Path published\* -DestinationPath app.zip -Force
+        run: Compress-Archive -Path ./output/published/* -DestinationPath Manatalol.zip -Force
+
 
       - name: Deploy to Windows VM
         shell: pwsh
@@ -44,8 +53,8 @@ jobs:
           $password = "${{ env.VM_PASSWORD }}"
           $deployPath = "${{ env.DEPLOY_PATH }}"
           $serviceName = "${{ env.SERVICE_NAME }}"
-          $localZip = "app.zip"
-          $remoteZip = "C:\\temp\\app.zip"
+          $localZip = "Manatalol.zip"
+          $remoteZip = "C:\\temp\\Manatalol.zip"
 
           Write-Host "🟢 Connexion à $hostname via WinRM..."
 
