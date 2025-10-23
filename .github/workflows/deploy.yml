@@ -58,9 +58,10 @@ jobs:
           $secpasswd = ConvertTo-SecureString $env:VM_PASSWORD -AsPlainText -Force
           $cred = New-Object System.Management.Automation.PSCredential ($env:VM_USERNAME, $secpasswd)
 
-          # Vérifier la connectivité WinRM HTTPS
+          # Tester la connexion WinRM HTTPS avec certificat auto-signé
           Write-Host "🔍 Testing WinRM HTTPS connectivity..."
-          Test-WSMan $env:VM_HOST -Port 5986 -UseSSL -Authentication Basic -ErrorAction Stop
+          Test-WSMan $env:VM_HOST -Port 5986 -UseSSL -Authentication Basic `
+            -SessionOption (New-PSSessionOption -SkipCACheck -SkipCNCheck) -ErrorAction Stop
           Write-Host "✅ WinRM HTTPS connection OK!"
 
           # Créer session distante
