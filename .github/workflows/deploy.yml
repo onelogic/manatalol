@@ -46,7 +46,7 @@ jobs:
       - name: Package app
         shell: pwsh
         run: |
-          $tempPath = "C:\temp"
+          $tempPath = "C:\manatalol"
           if (!(Test-Path $tempPath)) { New-Item -ItemType Directory -Path $tempPath | Out-Null }
           Compress-Archive -Path ./output/published/* -DestinationPath "$tempPath\Manatalol.zip" -Force
           Write-Host "📦 Package created at $tempPath\Manatalol.zip"
