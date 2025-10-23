@@ -84,7 +84,7 @@ jobs:
 
               Write-Host "Restarting IIS..."
               $iisreset = Get-Command iisreset.exe -ErrorAction SilentlyContinue
-              if ($iisreset) { & iisreset /restart | Out-Host } else { Write-Host "⚠️ IISRESET not found." }
+              if ($iisreset) { & iisreset /restart | Out-Host } else { Write-Host "IISRESET not found." }
           } -ArgumentList "C:\inetpub\wwwroot\Manatalol", "C:\manatalol\Manatalol.zip"
 
           # Fermer la session distante
