@@ -1,4 +1,4 @@
-name: Build & Deploy .NET App to Windows VM via WinRM
+name: Build & Deploy .NET App to Windows VM via WinRM HTTPS
 
 on:
   push:
@@ -40,7 +40,7 @@ jobs:
           dotnet restore Manatalol/Manatalol.App/Manatalol.App.csproj
           dotnet build Manatalol/Manatalol.App/Manatalol.App.csproj -c Release --no-restore
           dotnet publish Manatalol/Manatalol.App/Manatalol.App.csproj -c Release -o ./output/published
-          Write-Host "Build & publish completed."
+          Write-Host "✅ Build & publish completed."
 
       - name: Package app
         shell: pwsh
@@ -48,36 +48,28 @@ jobs:
           $tempPath = "C:\temp"
           if (!(Test-Path $tempPath)) { New-Item -ItemType Directory -Path $tempPath | Out-Null }
           Compress-Archive -Path ./output/published/* -DestinationPath "$tempPath\Manatalol.zip" -Force
-          Write-Host "Package created at $tempPath\Manatalol.zip"
-          
-      - name: Deploy to Windows VM
+          Write-Host "✅ Package created at $tempPath\Manatalol.zip"
+
+      - name: Deploy to Windows VM via HTTPS
         shell: pwsh
         run: |
           Write-Host "🚀 Starting deployment to $env:VM_HOST ..."
+
           $secpasswd = ConvertTo-SecureString $env:VM_PASSWORD -AsPlainText -Force
           $cred = New-Object System.Management.Automation.PSCredential ($env:VM_USERNAME, $secpasswd)
 
-          # Autoriser le trafic non chiffré et Basic Auth
-          Write-Host "🔧 Configuring WinRM client for unencrypted Basic auth..."
-          winrm set winrm/config/client '@{AllowUnencrypted="true"}'
-          winrm set winrm/config/client/auth '@{Basic="true"}'
+          # Vérifier la connectivité WinRM HTTPS
+          Write-Host "🔍 Testing WinRM HTTPS connectivity..."
+          Test-WSMan $env:VM_HOST -Port 5986 -UseSSL -Authentication Basic -ErrorAction Stop
+          Write-Host "✅ WinRM HTTPS connection OK!"
 
-          # Ajouter la VM aux TrustedHosts
-          Write-Host "🧱 Adding $env:VM_HOST to TrustedHosts..."
-          Set-Item WSMan:\localhost\Client\TrustedHosts -Value $env:VM_HOST -Force
-
-          # Vérifier la connexion
-          Write-Host "🔍 Testing WinRM connectivity..."
-          Test-WSMan $env:VM_HOST -Authentication Basic -ErrorAction Stop
-          Write-Host "✅ WinRM connection OK!"
-
-          # Créer la session distante
-          Write-Host "🌐 Creating PowerShell session..."
+          # Créer session distante
+          Write-Host "🌐 Creating PowerShell session via HTTPS..."
           $session = New-PSSession -ComputerName $env:VM_HOST `
                                    -Credential $cred `
-                                   -Port 5985 `
+                                   -Port 5986 `
                                    -Authentication Basic `
-                                   -UseSSL:$false `
+                                   -UseSSL `
                                    -SessionOption (New-PSSessionOption -SkipCACheck -SkipCNCheck) `
                                    -ErrorAction Stop
 
@@ -100,5 +92,6 @@ jobs:
               if ($iisreset) { & iisreset /restart | Out-Host } else { Write-Host "⚠️ IISRESET not found." }
           } -ArgumentList "C:\inetpub\wwwroot\Manatalol", "C:\manatalol\Manatalol.zip"
 
+          # Fermer la session distante
           Remove-PSSession $session
           Write-Host "🎉 Deployment finished!"
