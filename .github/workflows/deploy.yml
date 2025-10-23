@@ -40,7 +40,7 @@ jobs:
           dotnet restore Manatalol/Manatalol.App/Manatalol.App.csproj
           dotnet build Manatalol/Manatalol.App/Manatalol.App.csproj -c Release --no-restore
           dotnet publish Manatalol/Manatalol.App/Manatalol.App.csproj -c Release -o ./output/published
-          Write-Host "✅ Build & publish completed."
+          Write-Host "Build & publish completed."
 
       - name: Package app
         shell: pwsh
@@ -48,51 +48,45 @@ jobs:
           $tempPath = "C:\temp"
           if (!(Test-Path $tempPath)) { New-Item -ItemType Directory -Path $tempPath | Out-Null }
           Compress-Archive -Path ./output/published/* -DestinationPath "$tempPath\Manatalol.zip" -Force
-          Write-Host "✅ Package created at $tempPath\Manatalol.zip"
+          Write-Host "Package created at $tempPath\Manatalol.zip"
 
       - name: Deploy to Windows VM via HTTPS
         shell: pwsh
         run: |
-          Write-Host "🚀 Starting deployment to $env:VM_HOST ..."
+          Write-Host "Starting deployment to $env:VM_HOST ..."
 
           $secpasswd = ConvertTo-SecureString $env:VM_PASSWORD -AsPlainText -Force
           $cred = New-Object System.Management.Automation.PSCredential ($env:VM_USERNAME, $secpasswd)
 
-          # Tester la connexion WinRM HTTPS avec certificat auto-signé
-          Write-Host "🔍 Testing WinRM HTTPS connectivity..."
-          Test-WSMan $env:VM_HOST -Port 5986 -UseSSL -Authentication Basic `
-            -SessionOption (New-PSSessionOption -SkipCACheck -SkipCNCheck) -ErrorAction Stop
-          Write-Host "✅ WinRM HTTPS connection OK!"
-
-          # Créer session distante
-          Write-Host "🌐 Creating PowerShell session via HTTPS..."
+          # Créer session distante WinRM HTTPS
+          Write-Host "Creating PowerShell session via HTTPS..."
           $session = New-PSSession -ComputerName $env:VM_HOST `
                                    -Credential $cred `
                                    -Port 5986 `
-                                   -Authentication Basic `
                                    -UseSSL `
+                                   -Authentication Basic `
                                    -SessionOption (New-PSSessionOption -SkipCACheck -SkipCNCheck) `
                                    -ErrorAction Stop
 
           # Copier le package vers la VM
-          Write-Host "📦 Copying ZIP to remote machine..."
+          Write-Host "Copying ZIP to remote machine..."
           $localZip = "C:\temp\Manatalol.zip"
           $remoteZip = "C:\manatalol\Manatalol.zip"
           Copy-Item -Path $localZip -Destination $remoteZip -ToSession $session -Force
 
           # Déployer et redémarrer IIS
-          Write-Host "🧩 Extracting package on remote VM..."
+          Write-Host "Extracting package on remote VM..."
           Invoke-Command -Session $session -ScriptBlock {
               param($deployPath, $zipPath)
               if (Test-Path $deployPath) { Remove-Item -Recurse -Force $deployPath }
               New-Item -ItemType Directory -Force -Path $deployPath | Out-Null
               Expand-Archive -Path $zipPath -DestinationPath $deployPath -Force
 
-              Write-Host "🔁 Restarting IIS..."
+              Write-Host "Restarting IIS..."
               $iisreset = Get-Command iisreset.exe -ErrorAction SilentlyContinue
               if ($iisreset) { & iisreset /restart | Out-Host } else { Write-Host "⚠️ IISRESET not found." }
           } -ArgumentList "C:\inetpub\wwwroot\Manatalol", "C:\manatalol\Manatalol.zip"
 
           # Fermer la session distante
           Remove-PSSession $session
-          Write-Host "🎉 Deployment finished!"
+          Write-Host "Deployment finished!"
