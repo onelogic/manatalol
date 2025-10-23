@@ -54,11 +54,10 @@ jobs:
       - name: Configure WinRM client
         shell: pwsh
         run: |
-          Write-Host "⚙️ Configuring WinRM client..."
-          Set-Item WSMan:\localhost\Client\AllowUnencrypted $true
-          Set-Item WSMan:\localhost\Client\Auth\Basic $true
-          Set-Item WSMan:\localhost\Client\TrustedHosts $env:VM_HOST -Force
-          Write-Host "✅ WinRM client configured for $env:VM_HOST"
+          Write-Host "Configuring WinRM TrustedHosts..."
+          Set-Item -Path WSMan:\localhost\Client\TrustedHosts -Value $env:VM_HOST -Force
+          winrm set winrm/config/client '@{AllowUnencrypted="true"}'
+          winrm set winrm/config/service/auth '@{Basic="true"}'
 
       - name: Deploy to Windows VM
         shell: pwsh
