@@ -1,4 +1,4 @@
-name: Build & Deploy .NET App to Windows VM via WinRM HTTPS
+name: Build & Deploy .NET App to Windows VM
 
 on:
   push:
@@ -42,51 +42,41 @@ jobs:
           dotnet publish Manatalol/Manatalol.App/Manatalol.App.csproj -c Release -o ./output/published
           Write-Host "Build & publish completed."
 
-      - name: Package app
+      - name: Copy package to VM
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ env.VM_HOST }}
+          username: ${{ env.VM_USERNAME }}
+          password: ${{ env.VM_PASSWORD }}
+          source: "./output/published/*"
+          target: "C:/inetpub/wwwroot/Manatalol"
+          strip_components: 0
+
+      - name: Configure IIS and Subdomain
         shell: pwsh
         run: |
-          $tempPath = "C:\temp"
-          if (!(Test-Path $tempPath)) { New-Item -ItemType Directory -Path $tempPath | Out-Null }
-          Compress-Archive -Path ./output/published/* -DestinationPath "$tempPath\Manatalol.zip" -Force
-          Write-Host "Package created at $tempPath\Manatalol.zip"
+          Write-Host "Installing IIS features..."
+          Install-WindowsFeature -Name Web-Server, Web-WebServer, Web-Common-Http, Web-Default-Doc, Web-Static-Content, Web-ASP-Net45 -IncludeManagementTools
 
-      - name: Deploy to Windows VM via HTTPS
-        shell: pwsh
-        run: |
-          Write-Host "Starting deployment to $env:VM_HOST ..."
+          $siteName = "Manatalol"
+          $physicalPath = "C:\inetpub\wwwroot\Manatalol"
+          $subDomain = $env:SUBDOMAIN
+          $bindingPort = 80
+          $ipAddress = "*"
 
-          $secpasswd = ConvertTo-SecureString $env:VM_PASSWORD -AsPlainText -Force
-          $cred = New-Object System.Management.Automation.PSCredential ($env:VM_USERNAME, $secpasswd)
+          # Create site if it doesn't exist
+          if (-not (Get-Website -Name $siteName -ErrorAction SilentlyContinue)) {
+              Write-Host "Creating IIS site $siteName..."
+              New-Website -Name $siteName -Port $bindingPort -IPAddress $ipAddress -HostHeader $subDomain -PhysicalPath $physicalPath
+          } else {
+              Write-Host "Site $siteName already exists. Updating physical path..."
+              Set-ItemProperty "IIS:\Sites\$siteName" -Name physicalPath -Value $physicalPath
+          }
 
-          # Créer session distante WinRM HTTPS
-          Write-Host "Creating PowerShell session via HTTPS..."
-          $session = New-PSSession -ComputerName $env:VM_HOST `
-                                   -Credential $cred `
-                                   -Port 5986 `
-                                   -UseSSL `
-                                   -Authentication Basic `
-                                   -SessionOption (New-PSSessionOption -SkipCACheck -SkipCNCheck) `
-                                   -ErrorAction Stop
+          Write-Host "Restarting IIS site..."
+          if ((Get-Website -Name $siteName).State -eq "Started") {
+              Stop-Website -Name $siteName
+          }
+          Start-Website -Name $siteName
 
-          # Copier le package vers la VM
-          Write-Host "Copying ZIP to remote machine..."
-          $localZip = "C:\temp\Manatalol.zip"
-          $remoteZip = "C:\manatalol\Manatalol.zip"
-          Copy-Item -Path $localZip -Destination $remoteZip -ToSession $session -Force
-
-          # Déployer et redémarrer IIS
-          Write-Host "Extracting package on remote VM..."
-          Invoke-Command -Session $session -ScriptBlock {
-              param($deployPath, $zipPath)
-              if (Test-Path $deployPath) { Remove-Item -Recurse -Force $deployPath }
-              New-Item -ItemType Directory -Force -Path $deployPath | Out-Null
-              Expand-Archive -Path $zipPath -DestinationPath $deployPath -Force
-
-              Write-Host "Restarting IIS..."
-              $iisreset = Get-Command iisreset.exe -ErrorAction SilentlyContinue
-              if ($iisreset) { & iisreset /restart | Out-Host } else { Write-Host "IISRESET not found." }
-          } -ArgumentList "C:\inetpub\wwwroot\Manatalol", "C:\manatalol\Manatalol.zip"
-
-          # Fermer la session distante
-          Remove-PSSession $session
-          Write-Host "Deployment finished!"
+          Write-Host "Deployment completed! Site $siteName is now live at $subDomain"
