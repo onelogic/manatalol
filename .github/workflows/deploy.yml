@@ -57,12 +57,21 @@ jobs:
           $secpasswd = ConvertTo-SecureString $env:VM_PASSWORD -AsPlainText -Force
           $cred = New-Object System.Management.Automation.PSCredential ($env:VM_USERNAME, $secpasswd)
 
-          # Autoriser la connexion WinRM à distance non chiffrée
-          Write-Host "Configuring WinRM client for unencrypted traffic..."
+          # Autoriser le trafic non chiffré et Basic Auth
+          Write-Host "Configuring WinRM client for unencrypted Basic auth..."
           winrm set winrm/config/client '@{AllowUnencrypted="true"}'
           winrm set winrm/config/client/auth '@{Basic="true"}'
 
-          # Créer une session PowerShell distante
+          # Ajouter la VM aux TrustedHosts
+          Write-Host "Adding $env:VM_HOST to TrustedHosts..."
+          Set-Item WSMan:\localhost\Client\TrustedHosts -Value $env:VM_HOST -Force
+
+          # Vérifier la connexion
+          Write-Host "Testing WinRM connectivity..."
+          Test-WSMan $env:VM_HOST -Authentication Basic -ErrorAction Stop
+          Write-Host "WinRM connection OK!"
+
+          # Créer la session distante
           Write-Host "Creating PowerShell session..."
           $session = New-PSSession -ComputerName $env:VM_HOST `
                                    -Credential $cred `
@@ -81,24 +90,15 @@ jobs:
           # Déployer et redémarrer IIS
           Write-Host "Extracting package on remote VM..."
           Invoke-Command -Session $session -ScriptBlock {
-              param($deployPath, $zipPath, $siteName)
-
+              param($deployPath, $zipPath)
               if (Test-Path $deployPath) { Remove-Item -Recurse -Force $deployPath }
               New-Item -ItemType Directory -Force -Path $deployPath | Out-Null
               Expand-Archive -Path $zipPath -DestinationPath $deployPath -Force
 
-              # Redémarrer IIS si disponible
               Write-Host "Restarting IIS..."
               $iisreset = Get-Command iisreset.exe -ErrorAction SilentlyContinue
-              if ($iisreset) {
-                  & iisreset /restart | Out-Host
-              } else {
-                  Write-Host "IISRESET not found. Restart IIS manually if needed."
-              }
+              if ($iisreset) { & iisreset /restart | Out-Host } else { Write-Host "IISRESET not found." }
+          } -ArgumentList "C:\inetpub\wwwroot\Manatalol", "C:\manatalol\Manatalol.zip"
 
-              Write-Host "Deployment completed successfully."
-          } -ArgumentList "C:\inetpub\wwwroot\Manatalol", "C:\manatalol\Manatalol.zip", "Manatalol"
-
-          # Fermer la session distante
           Remove-PSSession $session
-          Write-Host "🎉 Deployment finished!"
+          Write-Host "Deployment finished!"
