@@ -16,15 +16,16 @@ jobs:
       - name: Load .env variables
         shell: pwsh
         run: |
-          Write-Host "Loading .env variables..."
+          Write-Host "📦 Loading .env variables..."
           if (Test-Path ".env") {
               Get-Content .env | ForEach-Object {
-                  if ($_ -match '^\s*$') { return }
+                  if ($_ -match '^\s*$' -or $_ -match '^#') { return }
                   $parts = $_ -split '=', 2
                   echo "$($parts[0])=$($parts[1])" >> $env:GITHUB_ENV
               }
+              Write-Host "✅ .env loaded successfully."
           } else {
-              Write-Host ".env file not found!"
+              Write-Host "❌ .env file not found!"
               exit 1
           }
 
@@ -36,11 +37,11 @@ jobs:
       - name: Build and Publish
         shell: pwsh
         run: |
-          Write-Host "Publishing project..."
+          Write-Host "🏗️ Building and publishing project..."
           dotnet restore Manatalol/Manatalol.App/Manatalol.App.csproj
           dotnet build Manatalol/Manatalol.App/Manatalol.App.csproj -c Release --no-restore
           dotnet publish Manatalol/Manatalol.App/Manatalol.App.csproj -c Release -o ./output/published
-          Write-Host "Build & publish completed."
+          Write-Host "✅ Build & publish completed."
 
       - name: Package app
         shell: pwsh
@@ -48,17 +49,31 @@ jobs:
           $tempPath = "C:\temp"
           if (!(Test-Path $tempPath)) { New-Item -ItemType Directory -Path $tempPath | Out-Null }
           Compress-Archive -Path ./output/published/* -DestinationPath "$tempPath\Manatalol.zip" -Force
-          Write-Host "Package created at $tempPath\Manatalol.zip"
+          Write-Host "📦 Package created at $tempPath\Manatalol.zip"
+
+      - name: Configure WinRM client
+        shell: pwsh
+        run: |
+          Write-Host "⚙️ Configuring WinRM client to allow unencrypted traffic..."
+          Set-Item WSMan:\localhost\Client\AllowUnencrypted $true
+          Set-Item WSMan:\localhost\Client\Auth\Basic $true
+          Write-Host "✅ WinRM client configured."
 
       - name: Deploy to Windows VM
         shell: pwsh
         run: |
-          Write-Host "Starting deployment to $env:VM_HOST..."
+          Write-Host "🚀 Starting deployment to $env:VM_HOST..."
+
+          # Vérification des variables
+          if (-not $env:VM_HOST -or -not $env:VM_USERNAME -or -not $env:VM_PASSWORD) {
+              Write-Host "❌ Missing VM connection info in environment variables."
+              exit 1
+          }
+
           $secpasswd = ConvertTo-SecureString $env:VM_PASSWORD -AsPlainText -Force
           $cred = New-Object System.Management.Automation.PSCredential ($env:VM_USERNAME, $secpasswd)
 
-          # Create remote session
-          Write-Host "Creating PowerShell session..."
+          Write-Host "🔗 Creating PowerShell session..."
           $session = New-PSSession -ComputerName $env:VM_HOST `
                                    -Credential $cred `
                                    -Port 5985 `
@@ -67,29 +82,28 @@ jobs:
                                    -SessionOption (New-PSSessionOption -SkipCACheck -SkipCNCheck) `
                                    -ErrorAction Stop
 
-          # Copy package
-          Write-Host "Copying ZIP to remote machine..."
-          Copy-Item -Path "C:\manatalol\Manatalol.zip" -Destination "C:\manatalol\Manatalol.zip" -ToSession $session -Force
+          Write-Host "📤 Copying package to remote machine..."
+          Copy-Item -Path "C:\temp\Manatalol.zip" -Destination "C:\temp\Manatalol.zip" -ToSession $session -Force
 
-          # Deploy and extract
-          Write-Host "Extracting package on remote VM..."
+          Write-Host "🧩 Extracting package and restarting IIS..."
           Invoke-Command -Session $session -ScriptBlock {
               param($deployPath, $zipPath, $siteName)
+
               if (Test-Path $deployPath) { Remove-Item -Recurse -Force $deployPath }
               New-Item -ItemType Directory -Force -Path $deployPath | Out-Null
+
               Expand-Archive -Path $zipPath -DestinationPath $deployPath -Force
 
-              # Restart IIS site
               if (Get-Website -Name $siteName -ErrorAction SilentlyContinue) {
-                  Write-Host "Restarting IIS site $siteName..."
+                  Write-Host "🔄 Restarting IIS site $siteName..."
                   Stop-Website -Name $siteName
                   Start-Website -Name $siteName
               } else {
-                  Write-Host "IIS site $siteName not found."
+                  Write-Host "⚠️ IIS site $siteName not found."
               }
-              Write-Host "Deployment completed successfully."
-          } -ArgumentList "C:\inetpub\wwwroot\Manatalol", "C:\manatalol\Manatalol.zip", "Manatalol"
 
-          # Close session
+              Write-Host "✅ Deployment completed successfully."
+          } -ArgumentList "C:\inetpub\wwwroot\Manatalol", "C:\temp\Manatalol.zip", "Manatalol"
+
           Remove-PSSession $session
-          Write-Host "Deployment finished!"
+          Write-Host "🎉 Deployment finished!"
