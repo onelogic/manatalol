@@ -1,4 +1,4 @@
-name: Build & Deploy .NET App to Windows VM
+name: Build & Deploy .NET App to Windows VM via WinRM
 
 on:
   push:
@@ -19,7 +19,7 @@ jobs:
           Write-Host "Loading .env variables..."
           if (Test-Path ".env") {
               Get-Content .env | ForEach-Object {
-                  if ($_ -match '^\s*$') { return }
+                  if ($_ -match '^\s*$' -or $_ -match '^\s*#') { return }
                   $parts = $_ -split '=', 2
                   echo "$($parts[0])=$($parts[1])" >> $env:GITHUB_ENV
               }
@@ -45,17 +45,15 @@ jobs:
       - name: Package app
         shell: pwsh
         run: |
-          $zipPath = Join-Path $env:GITHUB_WORKSPACE "Manatalol.zip"
+          $packagePath = "C:\manatalol"
+          if (!(Test-Path $packagePath)) { New-Item -ItemType Directory -Force -Path $packagePath | Out-Null }
+          $zipPath = "$packagePath\Manatalol.zip"
           Compress-Archive -Path ./output/published/* -DestinationPath $zipPath -Force
+          if (!(Test-Path $zipPath)) {
+              Write-Host "ZIP package not found!"
+              exit 1
+          }
           Write-Host "Package created at $zipPath"
-
-      - name: Configure WinRM client
-        shell: pwsh
-        run: |
-          Write-Host "Configuring WinRM TrustedHosts..."
-          Set-Item -Path WSMan:\localhost\Client\TrustedHosts -Value $env:VM_HOST -Force
-          winrm set winrm/config/client '@{AllowUnencrypted="true"}'
-          winrm set winrm/config/service/auth '@{Basic="true"}'
 
       - name: Deploy to Windows VM
         shell: pwsh
@@ -64,43 +62,52 @@ jobs:
           $secpasswd = ConvertTo-SecureString $env:VM_PASSWORD -AsPlainText -Force
           $cred = New-Object System.Management.Automation.PSCredential ($env:VM_USERNAME, $secpasswd)
 
-          # Create remote session
+          # Autoriser le host si nécessaire
+          winrm set winrm/config/client '@{TrustedHosts="*"}'
+
+          # Créer la session distante
           $session = New-PSSession -ComputerName $env:VM_HOST `
                                    -Credential $cred `
                                    -Port 5985 `
                                    -Authentication Basic `
-                                   -SessionOption (New-PSSessionOption -SkipCACheck -SkipCNCheck -SkipRevocationCheck) `
+                                   -UseSSL:$false `
+                                   -SessionOption (New-PSSessionOption -SkipCACheck -SkipCNCheck) `
                                    -ErrorAction Stop
 
-          # Copy package
-          $zipPath = Join-Path $env:GITHUB_WORKSPACE "Manatalol.zip"
-          Copy-Item -Path $zipPath -Destination "C:\manatalol\Manatalol.zip" -ToSession $session -Force
+          # Vérifier et copier le fichier
+          $localZip = "C:\manatalol\Manatalol.zip"
+          if (!(Test-Path $localZip)) {
+              Write-Host "File not found: $localZip"
+              exit 1
+          }
 
-          # Deploy and extract
+          Write-Host "📦 Copying ZIP to remote machine..."
+          Copy-Item -Path $localZip -Destination "C:\manatalol\Manatalol.zip" -ToSession $session -Force
+
+          # Déploiement sur la VM
+          Write-Host "Extracting package and restarting IIS..."
           Invoke-Command -Session $session -ScriptBlock {
               param($deployPath, $zipPath, $siteName)
 
+              # Décompression
               if (Test-Path $deployPath) { Remove-Item -Recurse -Force $deployPath }
               New-Item -ItemType Directory -Force -Path $deployPath | Out-Null
               Expand-Archive -Path $zipPath -DestinationPath $deployPath -Force
 
-              # Try IIS module, fallback to iisreset
-              if (Get-Module -ListAvailable -Name WebAdministration) {
-                  Import-Module WebAdministration
-                  if (Get-Website -Name $siteName -ErrorAction SilentlyContinue) {
-                      Stop-Website -Name $siteName
-                      Start-Website -Name $siteName
-                  } else {
-                      Write-Host "IIS site $siteName not found, skipping restart."
-                  }
+              # Redémarrer le site IIS via appcmd
+              $appcmd = "C:\Windows\System32\inetsrv\appcmd.exe"
+              if (Test-Path $appcmd) {
+                  Write-Host "Recycling app pool and restarting site..."
+                  & $appcmd stop site /site.name:$siteName
+                  & $appcmd start site /site.name:$siteName
+                  Write-Host "IIS site restarted successfully."
               } else {
-                  Write-Host "WebAdministration module not found, using iisreset..."
-                  iisreset /restart
+                  Write-Host "appcmd.exe not found. IIS may not be installed properly."
               }
 
               Write-Host "Deployment completed successfully."
           } -ArgumentList "C:\inetpub\wwwroot\Manatalol", "C:\manatalol\Manatalol.zip", "Manatalol"
 
-          # Close session
+          # Fermer la session
           Remove-PSSession $session
-          Write-Host "Deployment finished!"
+          Write-Host "🎯 Deployment finished successfully!"
