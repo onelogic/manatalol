@@ -1,4 +1,4 @@
-name: Build & Deploy .NET App to Windows Server
+name: Build & Deploy .NET App to Windows VM via WinRM (HTTPS)
 
 on:
   push:
@@ -7,37 +7,52 @@ on:
 
 jobs:
   build:
-    name: Build .NET app
     runs-on: windows-latest
     outputs:
-      artifact_path: ${{ steps.publish.outputs.artifact_path }}
+      artifact_path: ${{ steps.package.outputs.zip_path }}
 
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Load .env variables
+        shell: pwsh
+        run: |
+          Write-Host "Loading .env variables..."
+          if (Test-Path ".env") {
+              Get-Content .env | ForEach-Object {
+                  if ($_ -match '^\s*$') { return }
+                  $parts = $_ -split '=', 2
+                  echo "$($parts[0])=$($parts[1])" >> $env:GITHUB_ENV
+              }
+          } else {
+              Write-Host ".env file not found!"
+              exit 1
+          }
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 9.0.x
 
-      - name: Restore, Build and Publish
-        id: publish
+      - name: Build & Publish
         shell: pwsh
         run: |
-          Write-Host "Building and publishing project..."
           dotnet restore Manatalol/Manatalol.App/Manatalol.App.csproj
           dotnet publish Manatalol/Manatalol.App/Manatalol.App.csproj -c Release -o ./output/published
-          Write-Host "artifact_path=output/published" >> $env:GITHUB_OUTPUT
+          Write-Host "Build & publish completed."
 
-      - name: Upload published artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: published-app
-          path: ./output/published/
+      - name: Package app
+        id: package
+        shell: pwsh
+        run: |
+          $zipPath = "$env:GITHUB_WORKSPACE\Manatalol.zip"
+          if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
+          Compress-Archive -Path "./output/published/*" -DestinationPath $zipPath -Force
+          Write-Host "Package created at $zipPath"
+          echo "zip_path=$zipPath" >> $env:GITHUB_OUTPUT
 
   deploy:
-    name: Deploy to Windows VM via WinRM HTTPS
     runs-on: windows-latest
     needs: build
     env:
@@ -49,7 +64,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Verify package exists
+      - name: Ensure package exists
         shell: pwsh
         run: |
           $zipPath = "$env:GITHUB_WORKSPACE\Manatalol.zip"
@@ -60,74 +75,54 @@ jobs:
               Write-Host "Package found: $zipPath"
           }
 
-      - name: Deploy via WinRM HTTPS
+      - name: Deploy to Windows VM via WinRM HTTPS
         shell: pwsh
         run: |
           Write-Host "Starting remote deployment via WinRM (HTTPS)..."
 
-          # Convert password to secure string and create credential object
+          # Credentials
           $secpasswd = ConvertTo-SecureString $env:VM_PASSWORD -AsPlainText -Force
           $cred = New-Object System.Management.Automation.PSCredential ($env:VM_USERNAME, $secpasswd)
 
-          # Test WSMan connection
-          try {
-              Test-WSMan -ComputerName $env:VM_HOST -UseSSL -Port 5986 -Authentication Basic -ErrorAction Stop
-              Write-Host "WSMan HTTPS connection successful."
-          } catch {
-              Write-Error "Cannot connect via WinRM HTTPS to $($env:VM_HOST). Check port 5986, firewall, certificate and credentials."
-              exit 1
-          }
-
-          # Create remote session
+          # Create HTTPS session
           $session = New-PSSession -ComputerName $env:VM_HOST `
-                                  -Credential $cred `
-                                  -UseSSL `
-                                  -Port 5986 `
-                                  -Authentication Basic `
-                                  -SessionOption (New-PSSessionOption -SkipCACheck -SkipCNCheck)
+                                   -Credential $cred `
+                                   -Port 5986 `
+                                   -UseSSL `
+                                   -Authentication Basic `
+                                   -SessionOption (New-PSSessionOption -SkipCACheck -SkipCNCheck)
 
-          # Copy package to VM
-          $remoteZipPath = "C:\manatalol\Manatalol.zip"
-          Write-Host "Copying package to remote VM: $remoteZipPath"
-          Copy-Item -Path $zipPath -Destination $remoteZipPath -ToSession $session -Force
-
-          # Deploy package and configure IIS
+          # Ensure target folder exists
+          $deployPath = "C:\inetpub\wwwroot\Manatalol"
           Invoke-Command -Session $session -ScriptBlock {
-              param($zipPath, $subDomain)
-
-              $deployPath = "C:\inetpub\wwwroot\Manatalol"
-
-              # Create deployment folder if it does not exist
-              if (Test-Path $deployPath) { Remove-Item -Recurse -Force $deployPath }
-              New-Item -ItemType Directory -Force -Path $deployPath | Out-Null
-
-              # Extract ZIP
-              Expand-Archive -Path $zipPath -DestinationPath $deployPath -Force
-
-              # Install IIS if needed
-              if (-Not (Get-WindowsFeature -Name Web-Server).Installed) {
-                  Install-WindowsFeature -Name Web-Server -IncludeManagementTools
+              param($path)
+              if (-Not (Test-Path $path)) {
+                  New-Item -ItemType Directory -Force -Path $path | Out-Null
               }
+          } -ArgumentList $deployPath
 
+          # Copy ZIP to VM
+          Copy-Item -Path "$env:GITHUB_WORKSPACE\Manatalol.zip" -Destination "$deployPath\Manatalol.zip" -ToSession $session -Force
+
+          # Extract ZIP
+          Invoke-Command -Session $session -ScriptBlock {
+              param($zipPath, $deployPath)
+              Expand-Archive -Path $zipPath -DestinationPath $deployPath -Force
+          } -ArgumentList "$deployPath\Manatalol.zip", $deployPath
+
+          # Configure IIS
+          Invoke-Command -Session $session -ScriptBlock {
+              param($siteName, $deployPath, $subDomain)
               Import-Module WebAdministration
-
-              $siteName = "Manatalol"
-
-              # Create or update IIS site
               if (-not (Get-Website -Name $siteName -ErrorAction SilentlyContinue)) {
                   New-Website -Name $siteName -Port 80 -PhysicalPath $deployPath -HostHeader $subDomain
-                  Write-Host "IIS site $siteName created for $subDomain"
               } else {
                   Set-ItemProperty "IIS:\Sites\$siteName" -Name physicalPath -Value $deployPath
-                  Write-Host "IIS site $siteName updated"
               }
-
-              # Restart IIS site and service
               Restart-WebAppPool -Name "DefaultAppPool"
               Restart-Service W3SVC
-              Write-Host "Deployment completed successfully!"
-          } -ArgumentList $remoteZipPath, $env:SUBDOMAIN
+          } -ArgumentList "Manatalol", $deployPath, $env:SUBDOMAIN
 
           # Close session
           Remove-PSSession $session
-          Write-Host "Remote session closed."
+          Write-Host "Deployment finished successfully!"
