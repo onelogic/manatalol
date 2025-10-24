@@ -8,9 +8,6 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-    outputs:
-      artifact_path: ${{ steps.publish.outputs.artifact_path }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -20,7 +17,7 @@ jobs:
         run: |
           Write-Host "Loading .env variables..."
           if (Test-Path ".env") {
-              Get-Content .env | ForEach-Object {
+              Get-Content ".env" | ForEach-Object {
                   if ($_ -match '^\s*$' -or $_ -match '^#') { return }
                   $parts = $_ -split '=', 2
                   echo "$($parts[0])=$($parts[1])" >> $env:GITHUB_ENV
@@ -36,64 +33,92 @@ jobs:
           dotnet-version: 9.0.x
 
       - name: Build & Publish
-        id: publish
         shell: pwsh
         run: |
           dotnet restore Manatalol/Manatalol.App/Manatalol.App.csproj
           dotnet publish Manatalol/Manatalol.App/Manatalol.App.csproj -c Release -o ./output/published
-          Write-Host "artifact_path=output/published" >> $env:GITHUB_OUTPUT
+          Write-Host "Publish completed."
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: published-app
-          path: ./output/published
+      - name: Compress published app
+        shell: pwsh
+        run: |
+          $zipPath = "$env:GITHUB_WORKSPACE\Manatalol.zip"
+          if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
+          Compress-Archive -Path ./output/published/* -DestinationPath $zipPath -Force
+          Write-Host "Created package at $zipPath"
 
   deploy:
     runs-on: windows-latest
     needs: build
     steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: published-app
-          path: ./output/published
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Load .env variables
         shell: pwsh
         run: |
+          Write-Host "Loading .env variables..."
           if (Test-Path ".env") {
-              Get-Content .env | ForEach-Object {
+              Get-Content ".env" | ForEach-Object {
                   if ($_ -match '^\s*$' -or $_ -match '^#') { return }
                   $parts = $_ -split '=', 2
                   echo "$($parts[0])=$($parts[1])" >> $env:GITHUB_ENV
               }
+          } else {
+              Write-Host ".env file not found!"
+              exit 1
           }
 
-      - name: Copy files to VM
+      - name: Copy package to VM
         shell: pwsh
         run: |
           $secpasswd = ConvertTo-SecureString $env:VM_PASSWORD -AsPlainText -Force
           $cred = New-Object System.Management.Automation.PSCredential ($env:VM_USERNAME, $secpasswd)
-          $session = New-PSSession -ComputerName $env:VM_HOST -Credential $cred -UseSSL -Port 5986 -SessionOption (New-PSSessionOption -SkipCACheck -SkipCNCheck)
-          
-          Copy-Item -Path "./output/published/*" -Destination "C:\inetpub\wwwroot\Manatalol" -ToSession $session -Force
+          $session = New-PSSession -ComputerName $env:VM_HOST -Credential $cred -Port 5986 -UseSSL -SessionOption (New-PSSessionOption -SkipCACheck -SkipCNCheck)
 
+          $remotePath = "C:\temp\Manatalol.zip"
+          Copy-Item -Path "$env:GITHUB_WORKSPACE\Manatalol.zip" -Destination $remotePath -ToSession $session -Force
+          Write-Host "Package copied to $remotePath"
+
+      - name: Deploy to IIS
+        shell: pwsh
+        run: |
           Invoke-Command -Session $session -ScriptBlock {
               param($subDomain)
-              Install-WindowsFeature -Name Web-Server -IncludeManagementTools
+              
               $siteName = "Manatalol"
-              $path = "C:\inetpub\wwwroot\Manatalol"
+              $deployPath = "C:\inetpub\wwwroot\Manatalol"
+              $zipPath = "C:\temp\Manatalol.zip"
 
-              if (-not (Get-Website -Name $siteName -ErrorAction SilentlyContinue)) {
-                  New-Website -Name $siteName -Port 80 -PhysicalPath $path -HostHeader $subDomain
-              } else {
-                  Set-ItemProperty "IIS:\Sites\$siteName" -Name physicalPath -Value $path
+              # Crée le dossier de déploiement
+              if (Test-Path $deployPath) { Remove-Item -Recurse -Force $deployPath }
+              New-Item -ItemType Directory -Force -Path $deployPath | Out-Null
+
+              # Décompresse le zip
+              Expand-Archive -Path $zipPath -DestinationPath $deployPath -Force
+
+              # Installe IIS si nécessaire
+              if (-not (Get-WindowsFeature -Name Web-Server).Installed) {
+                  Install-WindowsFeature -Name Web-Server -IncludeManagementTools
               }
 
+              # Crée ou met à jour le site IIS
+              Import-Module WebAdministration
+              if (-not (Get-Website -Name $siteName -ErrorAction SilentlyContinue)) {
+                  New-Website -Name $siteName -Port 80 -PhysicalPath $deployPath -HostHeader $subDomain
+              } else {
+                  Set-ItemProperty "IIS:\Sites\$siteName" -Name physicalPath -Value $deployPath
+              }
+
+              # Redémarre le pool et le service IIS
               Restart-WebAppPool -Name "DefaultAppPool"
               Restart-Service W3SVC
+
+              Write-Host "Deployment to IIS completed successfully."
           } -ArgumentList $env:SUBDOMAIN
 
+      - name: Close session
+        shell: pwsh
+        run: |
           Remove-PSSession $session
-  
+          Write-Host "Deployment session closed."
