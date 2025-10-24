@@ -1,57 +1,10 @@
-name: Build & Deploy .NET App to Windows VM
-
-on:
-  push:
-    branches:
-      - main
-
-jobs:
-  build:
-    runs-on: windows-latest
-    outputs:
-      artifact_path: ${{ steps.publish.outputs.artifact_path }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Load .env variables
-        shell: pwsh
-        run: |
-          Write-Host "Loading .env variables..."
-          if (Test-Path ".env") {
-              Get-Content .env | ForEach-Object {
-                  if ($_ -match '^\s*$') { return }
-                  $parts = $_ -split '=', 2
-                  echo "$($parts[0])=$($parts[1])" >> $env:GITHUB_ENV
-              }
-          } else {
-              Write-Host ".env file not found!"
-              exit 1
-          }
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 9.0.x
-
-      - name: Build & Publish
-        id: publish
-        shell: pwsh
-        run: |
-          dotnet restore Manatalol/Manatalol.App/Manatalol.App.csproj
-          dotnet publish Manatalol/Manatalol.App/Manatalol.App.csproj -c Release -o ./output/published
-          Write-Host "artifact_path=output/published" >> $env:GITHUB_OUTPUT
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: published-app
-          path: ./output/published
-
   deploy:
     runs-on: ubuntu-latest
     needs: build
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4  # 👈 ajoute ceci
+
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
@@ -64,10 +17,11 @@ jobs:
           Write-Host "Loading .env variables..."
           if (Test-Path ".env") {
               Get-Content .env | ForEach-Object {
-                  if ($_ -match '^\s*$') { return }
+                  if ($_ -match '^\s*$' -or $_ -match '^#') { return }
                   $parts = $_ -split '=', 2
                   echo "$($parts[0])=$($parts[1])" >> $env:GITHUB_ENV
               }
+              Write-Host ".env variables loaded successfully!"
           } else {
               Write-Host ".env file not found!"
               exit 1
@@ -78,7 +32,7 @@ jobs:
         with:
           host: ${{ env.VM_HOST }}
           username: ${{ env.VM_USERNAME }}
-          password: ${{ env.VM_PASSWORD }}
+          password: ${{ env:VM_PASSWORD }}
           source: "./output/published/*"
           target: "C:/inetpub/wwwroot/Manatalol"
 
