@@ -49,7 +49,7 @@ jobs:
           path: ./output/published
 
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     needs: build
     steps:
       - name: Checkout code
@@ -91,15 +91,14 @@ jobs:
           $secpasswd = ConvertTo-SecureString $env:VM_PASSWORD -AsPlainText -Force
           $cred = New-Object System.Management.Automation.PSCredential ($env:VM_USERNAME, $secpasswd)
 
-          # Connect via PowerShell remoting (HTTPS)
+          # New-PSSession fonctionne uniquement ici car runner = Windows
           $session = New-PSSession -ComputerName $env:VM_HOST `
-                                   -Credential $cred `
-                                   -Port 5986 `
-                                   -UseSSL `
-                                   -SessionOption (New-PSSessionOption -SkipCACheck -SkipCNCheck) `
-                                   -ErrorAction Stop
+                                  -Credential $cred `
+                                  -Port 5986 `
+                                  -UseSSL `
+                                  -SessionOption (New-PSSessionOption -SkipCACheck -SkipCNCheck) `
+                                  -ErrorAction Stop
 
-          # Extract zip on remote
           Invoke-Command -Session $session -ScriptBlock {
               param($zipPath, $deployPath)
               if (!(Test-Path $deployPath)) { New-Item -ItemType Directory -Force -Path $deployPath | Out-Null }
