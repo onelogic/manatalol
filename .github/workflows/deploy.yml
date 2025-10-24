@@ -1,13 +1,20 @@
-name: Build & Deploy .NET App to Windows VM
+name: Build & Deploy .NET App to Windows VM (Final)
 
 on:
   push:
     branches:
       - main
 
+env:
+  PROJECT_PATH: Manatalol/Manatalol.App/Manatalol.App.csproj
+  OUTPUT_DIR: output/published
+
 jobs:
   build:
     runs-on: windows-latest
+    outputs:
+      artifact_path: ${{ steps.publish.outputs.artifact_path }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -16,11 +23,11 @@ jobs:
         shell: pwsh
         run: |
           Write-Host "Loading .env variables..."
-          if (Test-Path "$PWD\.env") {
-              Get-Content "$PWD\.env" | ForEach-Object {
+          if (Test-Path ".env") {
+              Get-Content .env | ForEach-Object {
                   if ($_ -match '^\s*$') { return }
-                  $parts = $_ -split '=', 2
-                  echo "$($parts[0])=$($parts[1])" >> $env:GITHUB_ENV
+                  $key, $value = $_ -split '=', 2
+                  echo "$key=$value" >> $env:GITHUB_ENV
               }
           } else {
               Write-Host ".env file not found!"
@@ -33,80 +40,84 @@ jobs:
           dotnet-version: 9.0.x
 
       - name: Build & Publish
+        id: publish
         shell: pwsh
         run: |
-          dotnet restore Manatalol/Manatalol.App/Manatalol.App.csproj
-          dotnet publish Manatalol/Manatalol.App/Manatalol.App.csproj -c Release -o ./output/published
+          dotnet restore $env:PROJECT_PATH
+          dotnet publish $env:PROJECT_PATH -c Release -o $env:OUTPUT_DIR
+          Write-Host "artifact_path=$env:OUTPUT_DIR" >> $env:GITHUB_OUTPUT
 
-      - name: Upload published artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: published-app
-          path: ./output/published
+          path: ${{ env.OUTPUT_DIR }}
 
   deploy:
     runs-on: windows-latest
     needs: build
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Download published artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: published-app
+          path: C:\Deploy\published-app
 
       - name: Load .env variables
         shell: pwsh
         run: |
           Write-Host "Loading .env variables..."
-          if (Test-Path "$PWD\.env") {
-              Get-Content "$PWD\.env" | ForEach-Object {
+          if (Test-Path ".env") {
+              Get-Content .env | ForEach-Object {
                   if ($_ -match '^\s*$') { return }
-                  $parts = $_ -split '=', 2
-                  echo "$($parts[0])=$($parts[1])" >> $env:GITHUB_ENV
+                  $key, $value = $_ -split '=', 2
+                  echo "$key=$value" >> $env:GITHUB_ENV
               }
           } else {
               Write-Host ".env file not found!"
               exit 1
           }
 
-      - name: Download published artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: published-app
-          path: ./output/published
-
-      - name: Copy files to VM
+      - name: Create ZIP for deployment
         shell: pwsh
         run: |
-          $user = $env:VM_USERNAME
-          $pass = $env:VM_PASSWORD
-          $vmHost = $env:VM_HOST
-          $localPath = "$PWD\output\published\*"
-          $remotePath = "C:\inetpub\wwwroot\Manatalol"
+          Compress-Archive -Path C:\Deploy\published-app\* -DestinationPath C:\Deploy\Manatalol.zip -Force
+          Write-Host "✅ Archive created: C:\Deploy\Manatalol.zip"
 
-          Write-Host "Copying files to $vmHost..."
-          $secpasswd = ConvertTo-SecureString $pass -AsPlainText -Force
-          $cred = New-Object System.Management.Automation.PSCredential ($user, $secpasswd)
-
-          Invoke-Command -ComputerName $vmHost -Credential $cred -ScriptBlock {
-              param($remotePath)
-              if (-not (Test-Path $remotePath)) { New-Item -ItemType Directory -Force -Path $remotePath | Out-Null }
-          } -ArgumentList $remotePath
-
-          robocopy $PWD\output\published $remotePath /MIR /NFL /NDL /NJH /NJS /nc /ns /np
-
-      - name: Deploy & configure IIS
+      - name: Deploy via WinRM (HTTPS)
         shell: pwsh
         run: |
-          $user = $env:VM_USERNAME
-          $pass = $env:VM_PASSWORD
           $vmHost = $env:VM_HOST
+          $vmUser = $env:VM_USERNAME
+          $vmPass = $env:VM_PASSWORD
           $subDomain = $env:SUBDOMAIN
-          $sitePath = "C:\inetpub\wwwroot\Manatalol"
 
-          $secpasswd = ConvertTo-SecureString $pass -AsPlainText -Force
-          $cred = New-Object System.Management.Automation.PSCredential ($user, $secpasswd)
+          if (-not $vmHost -or -not $vmUser -or -not $vmPass) {
+              Write-Error "❌ Missing VM credentials in environment variables!"
+              exit 1
+          }
 
-          Invoke-Command -ComputerName $vmHost -Credential $cred -ScriptBlock {
-              param($siteName, $path, $subDomain)
-              Install-WindowsFeature -Name Web-Server -IncludeManagementTools
+          $securePassword = ConvertTo-SecureString $vmPass -AsPlainText -Force
+          $cred = New-Object System.Management.Automation.PSCredential ($vmUser, $securePassword)
+
+          # Autoriser les connexions WinRM HTTPS
+          Set-Item WSMan:\localhost\Client\TrustedHosts -Value $vmHost -Force
+
+          Write-Host "🔗 Establishing WinRM session to $vmHost..."
+          $session = New-PSSession -ComputerName $vmHost -Credential $cred -UseSSL -Port 5986 -SessionOption (New-PSSessionOption -SkipCACheck -SkipCNCheck)
+
+          Copy-Item -Path "C:\Deploy\Manatalol.zip" -Destination "C:\inetpub\wwwroot\Manatalol.zip" -ToSession $session -Force
+
+          Invoke-Command -Session $session -ScriptBlock {
+              param($subDomain)
+              Write-Host "📦 Extracting and configuring IIS site..."
+              Expand-Archive -Path "C:\inetpub\wwwroot\Manatalol.zip" -DestinationPath "C:\inetpub\wwwroot\Manatalol" -Force
+              Remove-Item "C:\inetpub\wwwroot\Manatalol.zip" -Force
+
+              Import-Module WebAdministration
+              $siteName = "Manatalol"
+              $path = "C:\inetpub\wwwroot\Manatalol"
 
               if (-not (Get-Website -Name $siteName -ErrorAction SilentlyContinue)) {
                   New-Website -Name $siteName -Port 80 -PhysicalPath $path -HostHeader $subDomain
@@ -116,4 +127,7 @@ jobs:
 
               Restart-WebAppPool -Name "DefaultAppPool"
               Restart-Service W3SVC
-          } -ArgumentList "Manatalol", $sitePath, $subDomain
+              Write-Host "✅ Deployment complete and IIS restarted!"
+          } -ArgumentList $subDomain
+
+          Remove-PSSession $session
