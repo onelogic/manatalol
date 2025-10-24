@@ -37,6 +37,7 @@ jobs:
           path: ./output/published/
 
   deploy:
+    name: Deploy to Windows VM via WinRM HTTPS
     runs-on: windows-latest
     needs: build
     env:
@@ -44,66 +45,89 @@ jobs:
       VM_USERNAME: ${{ secrets.VM_USERNAME }}
       VM_PASSWORD: ${{ secrets.VM_PASSWORD }}
       SUBDOMAIN: ${{ secrets.SUBDOMAIN }}
-
     steps:
-      - name: Download published app
-        uses: actions/download-artifact@v4
-        with:
-          name: published-app
-          path: ./output/published
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Start remote deployment via WinRM (HTTPS)
+      - name: Verify package exists
+        shell: pwsh
+        run: |
+          $zipPath = "$env:GITHUB_WORKSPACE\Manatalol.zip"
+          if (-Not (Test-Path $zipPath)) {
+              Write-Error "Package $zipPath not found. Make sure the build created the zip."
+              exit 1
+          } else {
+              Write-Host "Package found: $zipPath"
+          }
+
+      - name: Deploy via WinRM HTTPS
         shell: pwsh
         run: |
           Write-Host "Starting remote deployment via WinRM (HTTPS)..."
 
-          if (-not $env:VM_HOST -or -not $env:VM_USERNAME -or -not $env:VM_PASSWORD) {
-              Write-Error "Missing environment variables. Please verify your GitHub Secrets."
+          # Convert password to secure string and create credential object
+          $secpasswd = ConvertTo-SecureString $env:VM_PASSWORD -AsPlainText -Force
+          $cred = New-Object System.Management.Automation.PSCredential ($env:VM_USERNAME, $secpasswd)
+
+          # Test WSMan connection
+          try {
+              Test-WSMan -ComputerName $env:VM_HOST -UseSSL -Port 5986 -Authentication Basic -ErrorAction Stop
+              Write-Host "WSMan HTTPS connection successful."
+          } catch {
+              Write-Error "Cannot connect via WinRM HTTPS to $($env:VM_HOST). Check port 5986, firewall, certificate and credentials."
               exit 1
           }
 
-          $vmHost = $env:VM_HOST
-          $vmUser = $env:VM_USERNAME
-          $vmPass = $env:VM_PASSWORD
-          $subDomain = $env:SUBDOMAIN
-          $appPath = "C:\inetpub\wwwroot\Manatalol"
-
-          # Convert credentials
-          $secpasswd = ConvertTo-SecureString $vmPass -AsPlainText -Force
-          $cred = New-Object System.Management.Automation.PSCredential ($vmUser, $secpasswd)
-
-          # Test connection
-          Test-WSMan $vmHost -UseSSL -Port 5986 -ErrorAction Stop
-
-          # Create session
-          $session = New-PSSession -ComputerName $vmHost `
+          # Create remote session
+          $session = New-PSSession -ComputerName $env:VM_HOST `
                                   -Credential $cred `
                                   -UseSSL `
                                   -Port 5986 `
                                   -Authentication Basic `
                                   -SessionOption (New-PSSessionOption -SkipCACheck -SkipCNCheck)
 
-          # Copy files
-          Copy-Item -Path "./output/published/*" -Destination $appPath -ToSession $session -Force -Recurse
+          # Copy package to VM
+          $remoteZipPath = "C:\manatalol\Manatalol.zip"
+          Write-Host "Copying package to remote VM: $remoteZipPath"
+          Copy-Item -Path $zipPath -Destination $remoteZipPath -ToSession $session -Force
 
-          # Configure IIS and bind subdomain
+          # Deploy package and configure IIS
           Invoke-Command -Session $session -ScriptBlock {
-              param($siteName, $physicalPath, $subDomain)
+              param($zipPath, $subDomain)
+
+              $deployPath = "C:\inetpub\wwwroot\Manatalol"
+
+              # Create deployment folder if it does not exist
+              if (Test-Path $deployPath) { Remove-Item -Recurse -Force $deployPath }
+              New-Item -ItemType Directory -Force -Path $deployPath | Out-Null
+
+              # Extract ZIP
+              Expand-Archive -Path $zipPath -DestinationPath $deployPath -Force
+
+              # Install IIS if needed
+              if (-Not (Get-WindowsFeature -Name Web-Server).Installed) {
+                  Install-WindowsFeature -Name Web-Server -IncludeManagementTools
+              }
+
               Import-Module WebAdministration
 
-              if (-not (Test-Path $physicalPath)) {
-                  New-Item -ItemType Directory -Path $physicalPath -Force | Out-Null
-              }
+              $siteName = "Manatalol"
 
+              # Create or update IIS site
               if (-not (Get-Website -Name $siteName -ErrorAction SilentlyContinue)) {
-                  New-Website -Name $siteName -Port 80 -PhysicalPath $physicalPath -HostHeader $subDomain
+                  New-Website -Name $siteName -Port 80 -PhysicalPath $deployPath -HostHeader $subDomain
+                  Write-Host "IIS site $siteName created for $subDomain"
               } else {
-                  Set-ItemProperty "IIS:\Sites\$siteName" -Name physicalPath -Value $physicalPath
+                  Set-ItemProperty "IIS:\Sites\$siteName" -Name physicalPath -Value $deployPath
+                  Write-Host "IIS site $siteName updated"
               }
 
+              # Restart IIS site and service
               Restart-WebAppPool -Name "DefaultAppPool"
               Restart-Service W3SVC
-          } -ArgumentList "Manatalol", $appPath, $subDomain
+              Write-Host "Deployment completed successfully!"
+          } -ArgumentList $remoteZipPath, $env:SUBDOMAIN
 
+          # Close session
           Remove-PSSession $session
-          Write-Host "Deployment finished!"
+          Write-Host "Remote session closed."
