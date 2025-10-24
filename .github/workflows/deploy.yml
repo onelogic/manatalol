@@ -45,61 +45,120 @@ jobs:
           path: ./Manatalol.zip
 
   deploy:
+    name: Deploy to Windows Server
     runs-on: windows-latest
     needs: build
+    env:
+      VM_HOST: ${{ secrets.VM_HOST }}
+      VM_USERNAME: ${{ secrets.VM_USERNAME }}
+      VM_PASSWORD: ${{ secrets.VM_PASSWORD }}
+      SUBDOMAIN: ${{ secrets.SUBDOMAIN }}
+
     steps:
-      - name: Download build artifacts
+      - name: Download published app
         uses: actions/download-artifact@v4
         with:
-          name: manatalol_build
-          path: ./
+          name: published-app
+          path: ./output/published
 
-      - name: Unzip artifact
-        run: |
-          Expand-Archive -Path .\Manatalol.zip -DestinationPath .\published -Force
-
-      - name: Load .env variables
+      - name: Deploy to Windows Server via WinRM
         shell: pwsh
         run: |
-          Write-Host "Loading .env variables..."
-          if (Test-Path ".env") {
-              Get-Content .env | ForEach-Object {
-                  if ($_ -match '^\s*$') { return }
-                  $parts = $_ -split '=', 2
-                  echo "$($parts[0])=$($parts[1])" >> $env:GITHUB_ENV
-              }
-          } else {
-              Write-Host ".env file not found!"
-              exit 1
-          }
+          Write-Host "Starting remote deployment..."
 
-      - name: Deploy to remote Windows VM
-        shell: pwsh
-        run: |
-          $vmHost = $env:VM_HOST
-          $vmUser = $env:VM_USERNAME
-          $vmPass = $env:VM_PASSWORD
+          $vmHost = "${{ env.VM_HOST }}"
+          $vmUser = "${{ env.VM_USERNAME }}"
+          $vmPass = "${{ env.VM_PASSWORD }}"
+          $subDomain = "${{ env.SUBDOMAIN }}"
 
           $secpasswd = ConvertTo-SecureString $vmPass -AsPlainText -Force
           $cred = New-Object System.Management.Automation.PSCredential ($vmUser, $secpasswd)
 
-          Set-Item WSMan:\localhost\Client\TrustedHosts -Value $vmHost -Force
-
-          $session = New-PSSession -ComputerName $vmHost -Credential $cred -Authentication Basic -UseSSL -Port 5986 -SessionOption (New-PSSessionOption -SkipCACheck -SkipCNCheck)
-
-          Copy-Item -Path ".\published\*" -Destination "C:\inetpub\wwwroot\Manatalol" -ToSession $session -Recurse -Force
+          # Créer la session WinRM (HTTPS)
+          $sessionOptions = New-PSSessionOption -SkipCACheck -SkipCNCheck -OperationTimeout 60000
+          $session = New-PSSession -ComputerName $vmHost -Credential $cred -UseSSL -Port 5986 -SessionOption $sessionOptions
 
           Invoke-Command -Session $session -ScriptBlock {
-              Import-Module WebAdministration
-              $siteName = "Manatalol"
+              param($subDomain)
+
               $path = "C:\inetpub\wwwroot\Manatalol"
-              if (-not (Get-Website -Name $siteName -ErrorAction SilentlyContinue)) {
-                  New-Website -Name $siteName -Port 80 -PhysicalPath $path -ApplicationPool "DefaultAppPool"
-              } else {
-                  Set-ItemProperty "IIS:\Sites\$siteName" -Name physicalPath -Value $path
+              if (-not (Test-Path $path)) {
+                  New-Item -ItemType Directory -Path $path | Out-Null
               }
+
+              Write-Host "Deploying files..."
+              Copy-Item -Path "$env:GITHUB_WORKSPACE\output\published\*" -Destination $path -Recurse -Force
+
+              Write-Host "Configuring IIS..."
+              Import-Module WebAdministration
+              if (-not (Get-Website -Name "Manatalol" -ErrorAction SilentlyContinue)) {
+                  New-Website -Name "Manatalol" -Port 80 -PhysicalPath $path -HostHeader $subDomain
+              } else {
+                  Set-ItemProperty "IIS:\Sites\Manatalol" -Name physicalPath -Value $path
+              }
+
               Restart-WebAppPool -Name "DefaultAppPool"
               Restart-Service W3SVC
-          }
+          } -ArgumentList $subDomain
 
           Remove-PSSession $session
+          Write-Host "✅ Deployment completed successfully!"
+
+        runs-on: windows-latest
+        needs: build
+        steps:
+          - name: Download build artifacts
+            uses: actions/download-artifact@v4
+            with:
+              name: manatalol_build
+              path: ./
+
+          - name: Unzip artifact
+            run: |
+              Expand-Archive -Path .\Manatalol.zip -DestinationPath .\published -Force
+
+          - name: Load .env variables
+            shell: pwsh
+            run: |
+              Write-Host "Loading .env variables..."
+              if (Test-Path ".env") {
+                  Get-Content .env | ForEach-Object {
+                      if ($_ -match '^\s*$') { return }
+                      $parts = $_ -split '=', 2
+                      echo "$($parts[0])=$($parts[1])" >> $env:GITHUB_ENV
+                  }
+              } else {
+                  Write-Host ".env file not found!"
+                  exit 1
+              }
+
+          - name: Deploy to remote Windows VM
+            shell: pwsh
+            run: |
+              $vmHost = $env:VM_HOST
+              $vmUser = $env:VM_USERNAME
+              $vmPass = $env:VM_PASSWORD
+
+              $secpasswd = ConvertTo-SecureString $vmPass -AsPlainText -Force
+              $cred = New-Object System.Management.Automation.PSCredential ($vmUser, $secpasswd)
+
+              Set-Item WSMan:\localhost\Client\TrustedHosts -Value $vmHost -Force
+
+              $session = New-PSSession -ComputerName $vmHost -Credential $cred -Authentication Basic -UseSSL -Port 5986 -SessionOption (New-PSSessionOption -SkipCACheck -SkipCNCheck)
+
+              Copy-Item -Path ".\published\*" -Destination "C:\inetpub\wwwroot\Manatalol" -ToSession $session -Recurse -Force
+
+              Invoke-Command -Session $session -ScriptBlock {
+                  Import-Module WebAdministration
+                  $siteName = "Manatalol"
+                  $path = "C:\inetpub\wwwroot\Manatalol"
+                  if (-not (Get-Website -Name $siteName -ErrorAction SilentlyContinue)) {
+                      New-Website -Name $siteName -Port 80 -PhysicalPath $path -ApplicationPool "DefaultAppPool"
+                  } else {
+                      Set-ItemProperty "IIS:\Sites\$siteName" -Name physicalPath -Value $path
+                  }
+                  Restart-WebAppPool -Name "DefaultAppPool"
+                  Restart-Service W3SVC
+              }
+
+              Remove-PSSession $session
