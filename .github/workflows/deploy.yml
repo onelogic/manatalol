@@ -10,6 +10,7 @@ jobs:
     runs-on: windows-latest
     outputs:
       artifact_path: ${{ steps.publish.outputs.artifact_path }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -20,7 +21,7 @@ jobs:
           Write-Host "Loading .env variables..."
           if (Test-Path ".env") {
               Get-Content .env | ForEach-Object {
-                  if ($_ -match '^\s*$') { return }
+                  if ($_ -match '^\s*$' -or $_ -match '^#') { return }
                   $parts = $_ -split '=', 2
                   echo "$($parts[0])=$($parts[1])" >> $env:GITHUB_ENV
               }
@@ -51,6 +52,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -72,64 +74,6 @@ jobs:
                   echo "$($parts[0])=$($parts[1])" >> $env:GITHUB_ENV
               }
               Write-Host ".env variables loaded successfully!"
-          } else {
-              Write-Host ".env file not found!"
-              exit 1
-          }
-
-      - name: Copy files to VM (via SCP)
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ env.VM_HOST }}
-          username: ${{ env.VM_USERNAME }}
-          password: ${{ env:VM_PASSWORD }}
-          source: "./output/published/*"
-          target: "C:/inetpub/wwwroot/Manatalol"
-
-      - name: Configure IIS site
-        shell: pwsh
-        run: |
-          $secpasswd = ConvertTo-SecureString $env:VM_PASSWORD -AsPlainText -Force
-          $cred = New-Object System.Management.Automation.PSCredential ($env:VM_USERNAME, $secpasswd)
-          $session = New-PSSession -ComputerName $env:VM_HOST -Credential $cred -UseSSL -Port 5986 -SessionOption (New-PSSessionOption -SkipCACheck -SkipCNCheck)
-
-          Invoke-Command -Session $session -ScriptBlock {
-              param($subDomain)
-              Install-WindowsFeature -Name Web-Server -IncludeManagementTools
-              $siteName = "Manatalol"
-              $path = "C:\inetpub\wwwroot\Manatalol"
-
-              if (-not (Get-Website -Name $siteName -ErrorAction SilentlyContinue)) {
-                  New-Website -Name $siteName -Port 80 -PhysicalPath $path -HostHeader $subDomain
-              } else {
-                  Set-ItemProperty "IIS:\Sites\$siteName" -Name physicalPath -Value $path
-              }
-
-              Restart-WebAppPool -Name "DefaultAppPool"
-              Restart-Service W3SVC
-          } -ArgumentList $env:SUBDOMAIN
-
-          Remove-PSSession $session
-
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: published-app
-          path: ./output/published
-
-      - name: Load .env variables
-        shell: pwsh
-        run: |
-          Write-Host "Loading .env variables..."
-          if (Test-Path ".env") {
-              Get-Content .env | ForEach-Object {
-                  if ($_ -match '^\s*$') { return }
-                  $parts = $_ -split '=', 2
-                  echo "$($parts[0])=$($parts[1])" >> $env:GITHUB_ENV
-              }
           } else {
               Write-Host ".env file not found!"
               exit 1
