@@ -8,8 +8,6 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-    outputs:
-      artifact_path: ${{ steps.publish.outputs.artifact_path }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -35,12 +33,10 @@ jobs:
           dotnet-version: 9.0.x
 
       - name: Build & Publish
-        id: publish
         shell: pwsh
         run: |
           dotnet restore Manatalol/Manatalol.App/Manatalol.App.csproj
           dotnet publish Manatalol/Manatalol.App/Manatalol.App.csproj -c Release -o ./output/published
-          Write-Host "artifact_path=output/published" >> $env:GITHUB_OUTPUT
 
       - name: Upload published artifact
         uses: actions/upload-artifact@v4
@@ -48,27 +44,12 @@ jobs:
           name: published-app
           path: ./output/published
 
-      - name: Upload .env file
-        uses: actions/upload-artifact@v4
-        with:
-          name: env-file
-          path: .env
-
   deploy:
     runs-on: windows-latest
     needs: build
     steps:
-      - name: Download published artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: published-app
-          path: ./output/published
-
-      - name: Download .env file
-        uses: actions/download-artifact@v4
-        with:
-          name: env-file
-          path: .
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Load .env variables
         shell: pwsh
@@ -85,6 +66,12 @@ jobs:
               exit 1
           }
 
+      - name: Download published artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: published-app
+          path: ./output/published
+
       - name: Copy files to VM
         shell: pwsh
         run: |
@@ -98,13 +85,11 @@ jobs:
           $secpasswd = ConvertTo-SecureString $pass -AsPlainText -Force
           $cred = New-Object System.Management.Automation.PSCredential ($user, $secpasswd)
 
-          # Crée le dossier distant si nécessaire
           Invoke-Command -ComputerName $host -Credential $cred -ScriptBlock {
               param($remotePath)
               if (-not (Test-Path $remotePath)) { New-Item -ItemType Directory -Force -Path $remotePath | Out-Null }
           } -ArgumentList $remotePath
 
-          # Copie les fichiers avec robocopy (fonctionne mieux que Copy-Item via session pour Windows)
           robocopy $PWD\output\published $remotePath /MIR /NFL /NDL /NJH /NJS /nc /ns /np
 
       - name: Deploy & configure IIS
@@ -121,18 +106,14 @@ jobs:
 
           Invoke-Command -ComputerName $host -Credential $cred -ScriptBlock {
               param($siteName, $path, $subDomain)
-
-              # Installer IIS si nécessaire
               Install-WindowsFeature -Name Web-Server -IncludeManagementTools
 
-              # Crée le site IIS si inexistant
               if (-not (Get-Website -Name $siteName -ErrorAction SilentlyContinue)) {
                   New-Website -Name $siteName -Port 80 -PhysicalPath $path -HostHeader $subDomain
               } else {
                   Set-ItemProperty "IIS:\Sites\$siteName" -Name physicalPath -Value $path
               }
 
-              # Redémarre le pool et le service
               Restart-WebAppPool -Name "DefaultAppPool"
               Restart-Service W3SVC
           } -ArgumentList "Manatalol", $sitePath, $subDomain
