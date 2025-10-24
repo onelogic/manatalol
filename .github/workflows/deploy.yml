@@ -1,49 +1,31 @@
-name: Build & Deploy .NET App to Windows VM (final, robust)
+name: Build & Deploy .NET App to Windows VM
 
 on:
   push:
-    branches: [ main ]
-
-env:
-  PROJECT_PATH: Manatalol/Manatalol.App/Manatalol.App.csproj
-  OUTPUT_DIR: output/published
-  DEPLOY_ZIP: C:\Deploy\Manatalol.zip
-  DEPLOY_DIR_ON_RUNNER: C:\Deploy\published-app
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: Checkout code (build)
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Debug list repo root (build) # retirez en prod si vous voulez
+      - name: Load .env variables
         shell: pwsh
         run: |
-          Write-Host "GITHUB_WORKSPACE = $env:GITHUB_WORKSPACE"
-          Get-ChildItem -Force $env:GITHUB_WORKSPACE | ForEach-Object { Write-Host $_.Name }
-
-      - name: Ensure .env exists (build)
-        shell: pwsh
-        run: |
-          $envPath = Join-Path $env:GITHUB_WORKSPACE ".env"
-          Write-Host "Checking .env at: $envPath"
-          if (-not (Test-Path $envPath)) {
-              Write-Error ".env file not found at $envPath. Commit it (or use secrets)."
+          Write-Host "Loading .env variables..."
+          if (Test-Path ".env") {
+              Get-Content .env | ForEach-Object {
+                  if ($_ -match '^\s*$') { return }
+                  $parts = $_ -split '=', 2
+                  echo "$($parts[0])=$($parts[1])" >> $env:GITHUB_ENV
+              }
+          } else {
+              Write-Host ".env file not found!"
               exit 1
           }
-          Write-Host ".env found."
-
-      - name: Load .env variables (build)
-        shell: pwsh
-        run: |
-          $envPath = Join-Path $env:GITHUB_WORKSPACE ".env"
-          Get-Content $envPath | ForEach-Object {
-              if ($_ -match '^\s*$' -or $_ -match '^#') { return }
-              $kv = $_ -split '=',2
-              if ($kv.Count -eq 2) { echo "$($kv[0])=$($kv[1])" >> $env:GITHUB_ENV }
-          }
-          Write-Host ".env loaded into GITHUB_ENV."
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -51,146 +33,73 @@ jobs:
           dotnet-version: 9.0.x
 
       - name: Build & Publish
-        shell: pwsh
         run: |
-          dotnet restore $env:PROJECT_PATH
-          dotnet publish $env:PROJECT_PATH -c Release -o $env:OUTPUT_DIR
-          Write-Host "Published to $env:OUTPUT_DIR"
+          dotnet restore Manatalol/Manatalol.App/Manatalol.App.csproj
+          dotnet publish Manatalol/Manatalol.App/Manatalol.App.csproj -c Release -o ./output/published
+          Compress-Archive -Path ./output/published/* -DestinationPath ./Manatalol.zip
 
-      - name: Prepare runner deploy folder
-        shell: pwsh
-        run: |
-          if (-not (Test-Path $env:DEPLOY_DIR_ON_RUNNER)) { New-Item -ItemType Directory -Path $env:DEPLOY_DIR_ON_RUNNER -Force | Out-Null }
-          robocopy $env:OUTPUT_DIR $env:DEPLOY_DIR_ON_RUNNER /MIR /NJH /NJS /NDL
-
-      - name: Create ZIP for deployment
-        shell: pwsh
-        run: |
-          if (Test-Path $env:DEPLOY_ZIP) { Remove-Item $env:DEPLOY_ZIP -Force }
-          Compress-Archive -Path "$env:DEPLOY_DIR_ON_RUNNER\*" -DestinationPath $env:DEPLOY_ZIP -Force
-          Write-Host "Created $env:DEPLOY_ZIP"
-
-      - name: Upload published artifact (zip)
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: published-zip
-          path: C:\Deploy\Manatalol.zip
+          name: manatalol_build
+          path: ./Manatalol.zip
 
   deploy:
     runs-on: windows-latest
     needs: build
     steps:
-      - name: Checkout code (deploy)
-        uses: actions/checkout@v4
-
-      - name: Debug list repo root (deploy) # retirez en prod si vous voulez
-        shell: pwsh
-        run: |
-          Write-Host "GITHUB_WORKSPACE = $env:GITHUB_WORKSPACE"
-          Get-ChildItem -Force $env:GITHUB_WORKSPACE | ForEach-Object { Write-Host $_.Name }
-
-      - name: Ensure .env exists (deploy)
-        shell: pwsh
-        run: |
-          $envPath = Join-Path $env:GITHUB_WORKSPACE ".env"
-          Write-Host "Checking .env at: $envPath"
-          if (-not (Test-Path $envPath)) {
-              Write-Error ".env file not found at $envPath. Commit it (or use secrets)."
-              exit 1
-          }
-          Write-Host ".env found."
-
-      - name: Load .env variables (deploy)
-        shell: pwsh
-        run: |
-          $envPath = Join-Path $env:GITHUB_WORKSPACE ".env"
-          Get-Content $envPath | ForEach-Object {
-              if ($_ -match '^\s*$' -or $_ -match '^#') { return }
-              $kv = $_ -split '=',2
-              if ($kv.Count -eq 2) { echo "$($kv[0])=$($kv[1])" >> $env:GITHUB_ENV }
-          }
-          Write-Host ".env loaded into GITHUB_ENV."
-
-      - name: Download published zip
+      - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
-          name: published-zip
-          path: C:\Deploy\published-app
+          name: manatalol_build
+          path: ./
 
-      - name: Sanity check downloaded zip
+      - name: Unzip artifact
+        run: |
+          Expand-Archive -Path .\Manatalol.zip -DestinationPath .\published -Force
+
+      - name: Load .env variables
         shell: pwsh
         run: |
-          $zip = "C:\Deploy\published-app\Manatalol.zip"
-          if (-not (Test-Path $zip)) { Write-Error "Artifact zip not found at $zip"; exit 1 }
-          Write-Host "Artifact zip exists: $zip"
+          Write-Host "Loading .env variables..."
+          if (Test-Path ".env") {
+              Get-Content .env | ForEach-Object {
+                  if ($_ -match '^\s*$') { return }
+                  $parts = $_ -split '=', 2
+                  echo "$($parts[0])=$($parts[1])" >> $env:GITHUB_ENV
+              }
+          } else {
+              Write-Host ".env file not found!"
+              exit 1
+          }
 
-      - name: Deploy via WinRM HTTPS with robust error handling
+      - name: Deploy to remote Windows VM
         shell: pwsh
         run: |
-          # read envs (set by earlier step)
           $vmHost = $env:VM_HOST
           $vmUser = $env:VM_USERNAME
           $vmPass = $env:VM_PASSWORD
-          $subDomain = $env:SUBDOMAIN
 
-          if (-not $vmHost -or -not $vmUser -or -not $vmPass) {
-              Write-Error "VM_HOST/VM_USERNAME/VM_PASSWORD must be set in .env"
-              exit 1
-          }
+          $secpasswd = ConvertTo-SecureString $vmPass -AsPlainText -Force
+          $cred = New-Object System.Management.Automation.PSCredential ($vmUser, $secpasswd)
 
-          $securePassword = ConvertTo-SecureString $vmPass -AsPlainText -Force
-          $cred = New-Object System.Management.Automation.PSCredential ($vmUser, $securePassword)
-
-          # Make sure runner trusts the remote for WinRM (only affects the runner machine)
           Set-Item WSMan:\localhost\Client\TrustedHosts -Value $vmHost -Force
 
-          $session = $null
-          try {
-              Write-Host "Opening WinRM HTTPS session to $vmHost (5986)..."
-              $so = New-PSSessionOption -SkipCACheck -SkipCNCheck
-              $session = New-PSSession -ComputerName $vmHost -Credential $cred -UseSSL -Port 5986 -Authentication Basic -SessionOption $so -ErrorAction Stop
+          $session = New-PSSession -ComputerName $vmHost -Credential $cred -Authentication Basic -UseSSL -Port 5986 -SessionOption (New-PSSessionOption -SkipCACheck -SkipCNCheck)
 
-              Write-Host "Copying zip to remote C:\Deploy\Manatalol.zip ..."
-              # ensure remote folder exists then copy
-              Invoke-Command -Session $session -ScriptBlock { if (-not (Test-Path 'C:\Deploy')) { New-Item -ItemType Directory -Path 'C:\Deploy' -Force | Out-Null } }
-              Copy-Item -ToSession $session -Path "C:\Deploy\published-app\Manatalol.zip" -Destination "C:\Deploy\Manatalol.zip" -Force
+          Copy-Item -Path ".\published\*" -Destination "C:\inetpub\wwwroot\Manatalol" -ToSession $session -Recurse -Force
 
-              Write-Host "Extracting, configuring IIS and setting site binding..."
-              Invoke-Command -Session $session -ScriptBlock {
-                  param($subDomain)
-                  $deployPath = "C:\inetpub\wwwroot\$subDomain"
-                  if (Test-Path $deployPath) { Remove-Item -Recurse -Force $deployPath }
-                  New-Item -ItemType Directory -Force -Path $deployPath | Out-Null
-                  Expand-Archive -Path "C:\Deploy\Manatalol.zip" -DestinationPath $deployPath -Force
-                  Remove-Item "C:\Deploy\Manatalol.zip" -Force
-
-                  # Install IIS features if missing
-                  if (-not (Get-WindowsFeature -Name Web-Server).Installed) {
-                      Install-WindowsFeature -Name Web-Server -IncludeManagementTools
-                  }
-
-                  Import-Module WebAdministration
-
-                  $siteName = $subDomain
-                  if (-not (Get-Website -Name $siteName -ErrorAction SilentlyContinue)) {
-                      New-Website -Name $siteName -Port 80 -PhysicalPath $deployPath -HostHeader $subDomain
-                  } else {
-                      Set-ItemProperty "IIS:\Sites\$siteName" -Name physicalPath -Value $deployPath
-                  }
-
-                  # Restart app pool and IIS
-                  try { Restart-WebAppPool -Name "DefaultAppPool" } catch { Write-Host "No DefaultAppPool to restart (ok)" }
-                  Restart-Service W3SVC
-              } -ArgumentList $subDomain -ErrorAction Stop
-
-              Write-Host "✅ Remote deployment finished successfully."
-          }
-          catch {
-              Write-Error "Deployment failed: $($_.Exception.Message)"
-              throw
-          }
-          finally {
-              if ($session) {
-                  try { Remove-PSSession $session } catch { Write-Host "Failed removing session (ignored)" }
+          Invoke-Command -Session $session -ScriptBlock {
+              Import-Module WebAdministration
+              $siteName = "Manatalol"
+              $path = "C:\inetpub\wwwroot\Manatalol"
+              if (-not (Get-Website -Name $siteName -ErrorAction SilentlyContinue)) {
+                  New-Website -Name $siteName -Port 80 -PhysicalPath $path -ApplicationPool "DefaultAppPool"
+              } else {
+                  Set-ItemProperty "IIS:\Sites\$siteName" -Name physicalPath -Value $path
               }
+              Restart-WebAppPool -Name "DefaultAppPool"
+              Restart-Service W3SVC
           }
+
+          Remove-PSSession $session
