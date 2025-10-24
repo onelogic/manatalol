@@ -1,4 +1,4 @@
-name: Build & Deploy .NET App to Windows VM via HTTPS
+name: Build & Deploy .NET App to Windows VM
 
 on:
   push:
@@ -8,7 +8,8 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-
+    outputs:
+      artifact_path: ${{ steps.publish.outputs.artifact_path }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -17,8 +18,8 @@ jobs:
         shell: pwsh
         run: |
           Write-Host "Loading .env variables..."
-          if (Test-Path ".env") {
-              Get-Content .env | ForEach-Object {
+          if (Test-Path "$PWD\.env") {
+              Get-Content "$PWD\.env" | ForEach-Object {
                   if ($_ -match '^\s*$') { return }
                   $parts = $_ -split '=', 2
                   echo "$($parts[0])=$($parts[1])" >> $env:GITHUB_ENV
@@ -34,32 +35,47 @@ jobs:
           dotnet-version: 9.0.x
 
       - name: Build & Publish
+        id: publish
         shell: pwsh
         run: |
-          Write-Host "Publishing project..."
           dotnet restore Manatalol/Manatalol.App/Manatalol.App.csproj
           dotnet publish Manatalol/Manatalol.App/Manatalol.App.csproj -c Release -o ./output/published
-          Write-Host "Build & publish completed."
+          Write-Host "artifact_path=output/published" >> $env:GITHUB_OUTPUT
 
-      - name: Package published app
-        shell: pwsh
-        run: |
-          $zipPath = "$env:GITHUB_WORKSPACE\Manatalol.zip"
-          if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
-          Compress-Archive -Path "./output/published/*" -DestinationPath $zipPath -Force
-          Write-Host "Package created at $zipPath"
+      - name: Upload published artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: published-app
+          path: ./output/published
+
+      - name: Upload .env file
+        uses: actions/upload-artifact@v4
+        with:
+          name: env-file
+          path: .env
 
   deploy:
     runs-on: windows-latest
     needs: build
-
     steps:
+      - name: Download published artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: published-app
+          path: ./output/published
+
+      - name: Download .env file
+        uses: actions/download-artifact@v4
+        with:
+          name: env-file
+          path: .
+
       - name: Load .env variables
         shell: pwsh
         run: |
           Write-Host "Loading .env variables..."
-          if (Test-Path ".env") {
-              Get-Content .env | ForEach-Object {
+          if (Test-Path "$PWD\.env") {
+              Get-Content "$PWD\.env" | ForEach-Object {
                   if ($_ -match '^\s*$') { return }
                   $parts = $_ -split '=', 2
                   echo "$($parts[0])=$($parts[1])" >> $env:GITHUB_ENV
@@ -69,41 +85,54 @@ jobs:
               exit 1
           }
 
-      - name: Deploy to Windows VM via WinRM HTTPS
+      - name: Copy files to VM
         shell: pwsh
         run: |
-          $secpasswd = ConvertTo-SecureString $env:VM_PASSWORD -AsPlainText -Force
-          $cred = New-Object System.Management.Automation.PSCredential ($env:VM_USERNAME, $secpasswd)
+          $user = $env:VM_USERNAME
+          $pass = $env:VM_PASSWORD
+          $host = $env:VM_HOST
+          $localPath = "$PWD\output\published\*"
+          $remotePath = "C:\inetpub\wwwroot\Manatalol"
 
-          # Création de session WinRM HTTPS
-          $sessionOption = New-PSSessionOption -SkipCACheck -SkipCNCheck
-          $session = New-PSSession -ComputerName $env:VM_HOST -Credential $cred -Port 5986 -UseSSL -Authentication Basic -SessionOption $sessionOption
+          Write-Host "Copying files to $host..."
+          $secpasswd = ConvertTo-SecureString $pass -AsPlainText -Force
+          $cred = New-Object System.Management.Automation.PSCredential ($user, $secpasswd)
 
-          # Copie du zip
-          Copy-Item -Path "$env:GITHUB_WORKSPACE\Manatalol.zip" -Destination "C:\Manatalol.zip" -ToSession $session -Force
+          # Crée le dossier distant si nécessaire
+          Invoke-Command -ComputerName $host -Credential $cred -ScriptBlock {
+              param($remotePath)
+              if (-not (Test-Path $remotePath)) { New-Item -ItemType Directory -Force -Path $remotePath | Out-Null }
+          } -ArgumentList $remotePath
 
-          # Déploiement sur la VM
-          Invoke-Command -Session $session -ScriptBlock {
-              param($subDomain)
-              $deployPath = "C:\inetpub\wwwroot\$subDomain"
-              $zipPath = "C:\Manatalol.zip"
+          # Copie les fichiers avec robocopy (fonctionne mieux que Copy-Item via session pour Windows)
+          robocopy $PWD\output\published $remotePath /MIR /NFL /NDL /NJH /NJS /nc /ns /np
 
-              if (Test-Path $deployPath) { Remove-Item -Recurse -Force $deployPath }
-              New-Item -ItemType Directory -Force -Path $deployPath | Out-Null
-              Expand-Archive -Path $zipPath -DestinationPath $deployPath -Force
+      - name: Deploy & configure IIS
+        shell: pwsh
+        run: |
+          $user = $env:VM_USERNAME
+          $pass = $env:VM_PASSWORD
+          $host = $env:VM_HOST
+          $subDomain = $env:SUBDOMAIN
+          $sitePath = "C:\inetpub\wwwroot\Manatalol"
 
-              # IIS: si le site n'existe pas, le créer
-              Import-Module WebAdministration
-              if (-not (Get-Website -Name $subDomain -ErrorAction SilentlyContinue)) {
-                  New-Website -Name $subDomain -Port 80 -PhysicalPath $deployPath -HostHeader $subDomain
+          $secpasswd = ConvertTo-SecureString $pass -AsPlainText -Force
+          $cred = New-Object System.Management.Automation.PSCredential ($user, $secpasswd)
+
+          Invoke-Command -ComputerName $host -Credential $cred -ScriptBlock {
+              param($siteName, $path, $subDomain)
+
+              # Installer IIS si nécessaire
+              Install-WindowsFeature -Name Web-Server -IncludeManagementTools
+
+              # Crée le site IIS si inexistant
+              if (-not (Get-Website -Name $siteName -ErrorAction SilentlyContinue)) {
+                  New-Website -Name $siteName -Port 80 -PhysicalPath $path -HostHeader $subDomain
               } else {
-                  Set-ItemProperty "IIS:\Sites\$subDomain" -Name physicalPath -Value $deployPath
+                  Set-ItemProperty "IIS:\Sites\$siteName" -Name physicalPath -Value $path
               }
 
-              # Redémarrage AppPool et IIS
+              # Redémarre le pool et le service
               Restart-WebAppPool -Name "DefaultAppPool"
               Restart-Service W3SVC
-          } -ArgumentList $env:SUBDOMAIN
-
-          Remove-PSSession $session
-          Write-Host "Deployment completed successfully!"
+          } -ArgumentList "Manatalol", $sitePath, $subDomain
