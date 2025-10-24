@@ -103,10 +103,6 @@ jobs:
 
           Remove-PSSession $session
           Write-Host "✅ Deployment completed successfully!"
-
-        runs-on: windows-latest
-        needs: build
-        steps:
           - name: Download build artifacts
             uses: actions/download-artifact@v4
             with:
