@@ -1,4 +1,4 @@
-name: Build & Deploy .NET App to Windows VM
+name: Build & Deploy .NET App to Windows VM via HTTPS
 
 on:
   push:
@@ -8,9 +8,25 @@ on:
 jobs:
   build:
     runs-on: windows-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Load .env variables
+        shell: pwsh
+        run: |
+          Write-Host "Loading .env variables..."
+          if (Test-Path ".env") {
+              Get-Content .env | ForEach-Object {
+                  if ($_ -match '^\s*$') { return }
+                  $parts = $_ -split '=', 2
+                  echo "$($parts[0])=$($parts[1])" >> $env:GITHUB_ENV
+              }
+          } else {
+              Write-Host ".env file not found!"
+              exit 1
+          }
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -20,52 +36,74 @@ jobs:
       - name: Build & Publish
         shell: pwsh
         run: |
+          Write-Host "Publishing project..."
           dotnet restore Manatalol/Manatalol.App/Manatalol.App.csproj
           dotnet publish Manatalol/Manatalol.App/Manatalol.App.csproj -c Release -o ./output/published
+          Write-Host "Build & publish completed."
 
-      - name: Compress published files
+      - name: Package published app
         shell: pwsh
         run: |
-          Compress-Archive -Path ./output/published/* -DestinationPath ./Manatalol.zip -Force
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: published-app
-          path: ./Manatalol.zip
+          $zipPath = "$env:GITHUB_WORKSPACE\Manatalol.zip"
+          if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
+          Compress-Archive -Path "./output/published/*" -DestinationPath $zipPath -Force
+          Write-Host "Package created at $zipPath"
 
   deploy:
     runs-on: windows-latest
     needs: build
-    steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: published-app
-          path: ./output
 
-      - name: Copy to Windows VM
+    steps:
+      - name: Load .env variables
         shell: pwsh
         run: |
-          $vmHost = "51.91.78.218"
-          $vmUser = "administrator"
-          $vmPassword = "Onel@gic.2025"
-          $destPath = "C:\inetpub\wwwroot\Manatalol"
-
-          $securePass = ConvertTo-SecureString $vmPassword -AsPlainText -Force
-          $cred = New-Object System.Management.Automation.PSCredential ($vmUser, $securePass)
-
-          # Connexion à la VM via SMB (partage Windows)
-          $session = New-PSSession -ComputerName $vmHost -Credential $cred -Authentication Negotiate
-
-          # Copier le zip et extraire
-          Copy-Item -Path "$PWD\Manatalol.zip" -Destination "$destPath\Manatalol.zip" -ToSession $session -Force
-          Invoke-Command -Session $session -ScriptBlock {
-              $zipPath = "$using:destPath\Manatalol.zip"
-              $extractPath = "$using:destPath"
-              if (Test-Path $extractPath) { Remove-Item -Recurse -Force $extractPath }
-              New-Item -ItemType Directory -Force -Path $extractPath | Out-Null
-              Expand-Archive -Path $zipPath -DestinationPath $extractPath -Force
+          Write-Host "Loading .env variables..."
+          if (Test-Path ".env") {
+              Get-Content .env | ForEach-Object {
+                  if ($_ -match '^\s*$') { return }
+                  $parts = $_ -split '=', 2
+                  echo "$($parts[0])=$($parts[1])" >> $env:GITHUB_ENV
+              }
+          } else {
+              Write-Host ".env file not found!"
+              exit 1
           }
 
+      - name: Deploy to Windows VM via WinRM HTTPS
+        shell: pwsh
+        run: |
+          $secpasswd = ConvertTo-SecureString $env:VM_PASSWORD -AsPlainText -Force
+          $cred = New-Object System.Management.Automation.PSCredential ($env:VM_USERNAME, $secpasswd)
+
+          # Création de session WinRM HTTPS
+          $sessionOption = New-PSSessionOption -SkipCACheck -SkipCNCheck
+          $session = New-PSSession -ComputerName $env:VM_HOST -Credential $cred -Port 5986 -UseSSL -Authentication Basic -SessionOption $sessionOption
+
+          # Copie du zip
+          Copy-Item -Path "$env:GITHUB_WORKSPACE\Manatalol.zip" -Destination "C:\Manatalol.zip" -ToSession $session -Force
+
+          # Déploiement sur la VM
+          Invoke-Command -Session $session -ScriptBlock {
+              param($subDomain)
+              $deployPath = "C:\inetpub\wwwroot\$subDomain"
+              $zipPath = "C:\Manatalol.zip"
+
+              if (Test-Path $deployPath) { Remove-Item -Recurse -Force $deployPath }
+              New-Item -ItemType Directory -Force -Path $deployPath | Out-Null
+              Expand-Archive -Path $zipPath -DestinationPath $deployPath -Force
+
+              # IIS: si le site n'existe pas, le créer
+              Import-Module WebAdministration
+              if (-not (Get-Website -Name $subDomain -ErrorAction SilentlyContinue)) {
+                  New-Website -Name $subDomain -Port 80 -PhysicalPath $deployPath -HostHeader $subDomain
+              } else {
+                  Set-ItemProperty "IIS:\Sites\$subDomain" -Name physicalPath -Value $deployPath
+              }
+
+              # Redémarrage AppPool et IIS
+              Restart-WebAppPool -Name "DefaultAppPool"
+              Restart-Service W3SVC
+          } -ArgumentList $env:SUBDOMAIN
+
           Remove-PSSession $session
+          Write-Host "Deployment completed successfully!"
