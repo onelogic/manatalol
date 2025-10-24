@@ -39,6 +39,11 @@ jobs:
   deploy:
     runs-on: windows-latest
     needs: build
+    env:
+      VM_HOST: ${{ secrets.VM_HOST }}
+      VM_USERNAME: ${{ secrets.VM_USERNAME }}
+      VM_PASSWORD: ${{ secrets.VM_PASSWORD }}
+      SUBDOMAIN: ${{ secrets.SUBDOMAIN }}
 
     steps:
       - name: Download published app
@@ -47,48 +52,30 @@ jobs:
           name: published-app
           path: ./output/published
 
-      - name: Debug secrets (optional)
-        shell: pwsh
-        run: |
-          Write-Host "Checking secrets..."
-          Write-Host "VM_HOST: $env:VM_HOST"
-          Write-Host "VM_USERNAME: $env:VM_USERNAME"
-          if (-not $env:VM_PASSWORD) { Write-Host "VM_PASSWORD is empty!" } else { Write-Host "✅ VM_PASSWORD loaded" }
-          Write-Host "SUBDOMAIN: $env:SUBDOMAIN"
-
       - name: Start remote deployment via WinRM (HTTPS)
         shell: pwsh
         run: |
+          Write-Host "Starting remote deployment via WinRM (HTTPS)..."
+
+          if (-not $env:VM_HOST -or -not $env:VM_USERNAME -or -not $env:VM_PASSWORD) {
+              Write-Error "Missing environment variables. Please verify your GitHub Secrets."
+              exit 1
+          }
+
           $vmHost = $env:VM_HOST
           $vmUser = $env:VM_USERNAME
           $vmPass = $env:VM_PASSWORD
           $subDomain = $env:SUBDOMAIN
           $appPath = "C:\inetpub\wwwroot\Manatalol"
 
-          Write-Host "Starting remote deployment via WinRM (HTTPS)..."
-
-          if (-not $vmHost -or -not $vmUser -or -not $vmPass) {
-              Write-Error "Missing environment variables. Please verify your GitHub Secrets."
-              exit 1
-          }
-
           # Convert credentials
           $secpasswd = ConvertTo-SecureString $vmPass -AsPlainText -Force
           $cred = New-Object System.Management.Automation.PSCredential ($vmUser, $secpasswd)
 
           # Test connection
-          Write-Host "Testing WinRM HTTPS connection to $vmHost..."
-          try {
-              Test-WSMan $vmHost -UseSSL -Port 5986 -ErrorAction Stop
-              Write-Host "WinRM HTTPS is reachable."
-          }
-          catch {
-              Write-Error "WinRM over HTTPS not reachable on $vmHost. Verify port 5986 and listener configuration."
-              exit 1
-          }
+          Test-WSMan $vmHost -UseSSL -Port 5986 -ErrorAction Stop
 
           # Create session
-          Write-Host "Creating PowerShell session..."
           $session = New-PSSession -ComputerName $vmHost `
                                   -Credential $cred `
                                   -UseSSL `
@@ -97,11 +84,9 @@ jobs:
                                   -SessionOption (New-PSSessionOption -SkipCACheck -SkipCNCheck)
 
           # Copy files
-          Write-Host "Copying published files to remote VM..."
           Copy-Item -Path "./output/published/*" -Destination $appPath -ToSession $session -Force -Recurse
 
           # Configure IIS and bind subdomain
-          Write-Host "Configuring IIS site..."
           Invoke-Command -Session $session -ScriptBlock {
               param($siteName, $physicalPath, $subDomain)
               Import-Module WebAdministration
@@ -118,9 +103,7 @@ jobs:
 
               Restart-WebAppPool -Name "DefaultAppPool"
               Restart-Service W3SVC
-              Write-Host "Deployment completed successfully."
           } -ArgumentList "Manatalol", $appPath, $subDomain
 
           Remove-PSSession $session
           Write-Host "Deployment finished!"
-  
