@@ -1,4 +1,4 @@
-name: Build & Deploy .NET App to Windows VM
+name: Build & Deploy .NET App to Windows Server
 
 on:
   push:
@@ -7,42 +7,34 @@ on:
 
 jobs:
   build:
+    name: Build .NET app
     runs-on: windows-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    outputs:
+      artifact_path: ${{ steps.publish.outputs.artifact_path }}
 
-      - name: Load .env variables
-        shell: pwsh
-        run: |
-          Write-Host "Loading .env variables..."
-          if (Test-Path ".env") {
-              Get-Content .env | ForEach-Object {
-                  if ($_ -match '^\s*$') { return }
-                  $parts = $_ -split '=', 2
-                  echo "$($parts[0])=$($parts[1])" >> $env:GITHUB_ENV
-              }
-          } else {
-              Write-Host ".env file not found!"
-              exit 1
-          }
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 9.0.x
 
-      - name: Build & Publish
+      - name: Restore, Build and Publish
+        id: publish
+        shell: pwsh
         run: |
+          Write-Host "Building and publishing project..."
           dotnet restore Manatalol/Manatalol.App/Manatalol.App.csproj
           dotnet publish Manatalol/Manatalol.App/Manatalol.App.csproj -c Release -o ./output/published
-          Compress-Archive -Path ./output/published/* -DestinationPath ./Manatalol.zip
+          Write-Host "artifact_path=output/published" >> $env:GITHUB_OUTPUT
 
-      - name: Upload build artifacts
+      - name: Upload published artifact
         uses: actions/upload-artifact@v4
         with:
-          name: manatalol_build
-          path: ./Manatalol.zip
+          name: published-app
+          path: ./output/published/
 
   deploy:
     name: Deploy to Windows Server
@@ -55,16 +47,16 @@ jobs:
       SUBDOMAIN: ${{ secrets.SUBDOMAIN }}
 
     steps:
-      - name: Download published app
+      - name: Download published artifact
         uses: actions/download-artifact@v4
         with:
           name: published-app
           path: ./output/published
 
-      - name: Deploy to Windows Server via WinRM
+      - name: Deploy via WinRM HTTPS
         shell: pwsh
         run: |
-          Write-Host "Starting remote deployment..."
+          Write-Host "Starting remote deployment via WinRM (HTTPS)..."
 
           $vmHost = "${{ env.VM_HOST }}"
           $vmUser = "${{ env.VM_USERNAME }}"
@@ -74,7 +66,6 @@ jobs:
           $secpasswd = ConvertTo-SecureString $vmPass -AsPlainText -Force
           $cred = New-Object System.Management.Automation.PSCredential ($vmUser, $secpasswd)
 
-          # Créer la session WinRM (HTTPS)
           $sessionOptions = New-PSSessionOption -SkipCACheck -SkipCNCheck -OperationTimeout 60000
           $session = New-PSSession -ComputerName $vmHost -Credential $cred -UseSSL -Port 5986 -SessionOption $sessionOptions
 
@@ -102,59 +93,4 @@ jobs:
           } -ArgumentList $subDomain
 
           Remove-PSSession $session
-          Write-Host "✅ Deployment completed successfully!"
-          - name: Download build artifacts
-            uses: actions/download-artifact@v4
-            with:
-              name: manatalol_build
-              path: ./
-
-          - name: Unzip artifact
-            run: |
-              Expand-Archive -Path .\Manatalol.zip -DestinationPath .\published -Force
-
-          - name: Load .env variables
-            shell: pwsh
-            run: |
-              Write-Host "Loading .env variables..."
-              if (Test-Path ".env") {
-                  Get-Content .env | ForEach-Object {
-                      if ($_ -match '^\s*$') { return }
-                      $parts = $_ -split '=', 2
-                      echo "$($parts[0])=$($parts[1])" >> $env:GITHUB_ENV
-                  }
-              } else {
-                  Write-Host ".env file not found!"
-                  exit 1
-              }
-
-          - name: Deploy to remote Windows VM
-            shell: pwsh
-            run: |
-              $vmHost = $env:VM_HOST
-              $vmUser = $env:VM_USERNAME
-              $vmPass = $env:VM_PASSWORD
-
-              $secpasswd = ConvertTo-SecureString $vmPass -AsPlainText -Force
-              $cred = New-Object System.Management.Automation.PSCredential ($vmUser, $secpasswd)
-
-              Set-Item WSMan:\localhost\Client\TrustedHosts -Value $vmHost -Force
-
-              $session = New-PSSession -ComputerName $vmHost -Credential $cred -Authentication Basic -UseSSL -Port 5986 -SessionOption (New-PSSessionOption -SkipCACheck -SkipCNCheck)
-
-              Copy-Item -Path ".\published\*" -Destination "C:\inetpub\wwwroot\Manatalol" -ToSession $session -Recurse -Force
-
-              Invoke-Command -Session $session -ScriptBlock {
-                  Import-Module WebAdministration
-                  $siteName = "Manatalol"
-                  $path = "C:\inetpub\wwwroot\Manatalol"
-                  if (-not (Get-Website -Name $siteName -ErrorAction SilentlyContinue)) {
-                      New-Website -Name $siteName -Port 80 -PhysicalPath $path -ApplicationPool "DefaultAppPool"
-                  } else {
-                      Set-ItemProperty "IIS:\Sites\$siteName" -Name physicalPath -Value $path
-                  }
-                  Restart-WebAppPool -Name "DefaultAppPool"
-                  Restart-Service W3SVC
-              }
-
-              Remove-PSSession $session
+          Write-Host "Deployment completed successfully!"
