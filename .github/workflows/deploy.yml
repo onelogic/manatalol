@@ -8,6 +8,8 @@ on:
 jobs:
   build:
     runs-on: windows-latest
+    outputs:
+      artifact_path: ${{ steps.publish.outputs.artifact_path }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -33,33 +35,31 @@ jobs:
           dotnet-version: 9.0.x
 
       - name: Build & Publish
+        id: publish
         shell: pwsh
         run: |
           dotnet restore Manatalol/Manatalol.App/Manatalol.App.csproj
           dotnet publish Manatalol/Manatalol.App/Manatalol.App.csproj -c Release -o ./output/published
-
-      - name: Create ZIP package
-        shell: pwsh
-        run: |
-          $zipPath = "$env:GITHUB_WORKSPACE\Manatalol.zip"
-          Compress-Archive -Path ./output/published/* -DestinationPath $zipPath -Force
-          Write-Host "Package created at $zipPath"
+          Write-Host "artifact_path=output/published" >> $env:GITHUB_OUTPUT
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: published-app
-          path: Manatalol.zip
+          path: ./output/published
 
   deploy:
     runs-on: ubuntu-latest
     needs: build
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: published-app
-          path: ./artifact
+          path: ./output/published
 
       - name: Load .env variables
         shell: pwsh
@@ -76,32 +76,35 @@ jobs:
               exit 1
           }
 
-      - name: Copy files to VM (via SCP)
+      - name: Copy files to Windows VM (via SCP)
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ env.VM_HOST }}
           username: ${{ env.VM_USERNAME }}
           password: ${{ env.VM_PASSWORD }}
-          source: "./artifact/Manatalol.zip"
+          source: "./output/published/*"
           target: "C:/inetpub/wwwroot/Manatalol"
-          port: 22
 
-      - name: Deploy on Windows VM (extract ZIP)
+      - name: Deploy on Windows VM
         shell: pwsh
         run: |
           $secpasswd = ConvertTo-SecureString $env:VM_PASSWORD -AsPlainText -Force
           $cred = New-Object System.Management.Automation.PSCredential ($env:VM_USERNAME, $secpasswd)
-          
-          $session = New-PSSession -ComputerName $env.VM_HOST `
-                                   -Credential $cred `
-                                   -UseSSL:$false `
-                                   -Port 22 `
-                                   -Authentication Basic
 
+          # Connect via PowerShell remoting (HTTPS)
+          $session = New-PSSession -ComputerName $env:VM_HOST `
+                                   -Credential $cred `
+                                   -Port 5986 `
+                                   -UseSSL `
+                                   -SessionOption (New-PSSessionOption -SkipCACheck -SkipCNCheck) `
+                                   -ErrorAction Stop
+
+          # Extract zip on remote
           Invoke-Command -Session $session -ScriptBlock {
               param($zipPath, $deployPath)
-              if (-Not (Test-Path $deployPath)) { New-Item -ItemType Directory -Path $deployPath | Out-Null }
+              if (!(Test-Path $deployPath)) { New-Item -ItemType Directory -Force -Path $deployPath | Out-Null }
               Expand-Archive -Path $zipPath -DestinationPath $deployPath -Force
-          } -ArgumentList "C:\inetpub\wwwroot\Manatalol\Manatalol.zip", "C:\inetpub\wwwroot\Manatalol"
+          } -ArgumentList "C:\inetpub\wwwroot\Manatalol\*", "C:\inetpub\wwwroot\Manatalol"
 
           Remove-PSSession $session
+          Write-Host "Deployment finished!"
