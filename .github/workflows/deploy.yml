@@ -77,15 +77,15 @@ jobs:
         run: |
           $user = $env:VM_USERNAME
           $pass = $env:VM_PASSWORD
-          $host = $env:VM_HOST
+          $vmHost = $env:VM_HOST
           $localPath = "$PWD\output\published\*"
           $remotePath = "C:\inetpub\wwwroot\Manatalol"
 
-          Write-Host "Copying files to $host..."
+          Write-Host "Copying files to $vmHost..."
           $secpasswd = ConvertTo-SecureString $pass -AsPlainText -Force
           $cred = New-Object System.Management.Automation.PSCredential ($user, $secpasswd)
 
-          Invoke-Command -ComputerName $host -Credential $cred -ScriptBlock {
+          Invoke-Command -ComputerName $vmHost -Credential $cred -ScriptBlock {
               param($remotePath)
               if (-not (Test-Path $remotePath)) { New-Item -ItemType Directory -Force -Path $remotePath | Out-Null }
           } -ArgumentList $remotePath
@@ -97,14 +97,14 @@ jobs:
         run: |
           $user = $env:VM_USERNAME
           $pass = $env:VM_PASSWORD
-          $host = $env:VM_HOST
+          $vmHost = $env:VM_HOST
           $subDomain = $env:SUBDOMAIN
           $sitePath = "C:\inetpub\wwwroot\Manatalol"
 
           $secpasswd = ConvertTo-SecureString $pass -AsPlainText -Force
           $cred = New-Object System.Management.Automation.PSCredential ($user, $secpasswd)
 
-          Invoke-Command -ComputerName $host -Credential $cred -ScriptBlock {
+          Invoke-Command -ComputerName $vmHost -Credential $cred -ScriptBlock {
               param($siteName, $path, $subDomain)
               Install-WindowsFeature -Name Web-Server -IncludeManagementTools
 
