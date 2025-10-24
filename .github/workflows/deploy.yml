@@ -6,9 +6,10 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: windows-latest
-
+    outputs:
+      artifact_path: ${{ steps.publish.outputs.artifact_path }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -16,7 +17,6 @@ jobs:
       - name: Load .env variables
         shell: pwsh
         run: |
-          Write-Host "Loading .env variables..."
           if (Test-Path ".env") {
               Get-Content .env | ForEach-Object {
                   if ($_ -match '^\s*$') { return }
@@ -33,16 +33,40 @@ jobs:
         with:
           dotnet-version: 9.0.x
 
-      - name: Build and Publish
+      - name: Build & Publish
+        id: publish
         shell: pwsh
         run: |
-          Write-Host "Publishing project..."
           dotnet restore Manatalol/Manatalol.App/Manatalol.App.csproj
-          dotnet build Manatalol/Manatalol.App/Manatalol.App.csproj -c Release --no-restore
           dotnet publish Manatalol/Manatalol.App/Manatalol.App.csproj -c Release -o ./output/published
-          Write-Host "Build & publish completed."
+          Write-Host "artifact_path=output/published" >> $env:GITHUB_OUTPUT
 
-      - name: Copy package to VM
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: published-app
+          path: ./output/published
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: published-app
+          path: ./output/published
+
+      - name: Load .env variables
+        run: |
+          if [ -f ".env" ]; then
+            export $(cat .env | xargs)
+          else
+            echo ".env file not found!"
+            exit 1
+          fi
+
+      - name: Copy files to VM (via SCP)
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ env.VM_HOST }}
@@ -50,33 +74,28 @@ jobs:
           password: ${{ env.VM_PASSWORD }}
           source: "./output/published/*"
           target: "C:/inetpub/wwwroot/Manatalol"
-          strip_components: 0
 
-      - name: Configure IIS and Subdomain
+      - name: Configure IIS site
         shell: pwsh
         run: |
-          Write-Host "Installing IIS features..."
-          Install-WindowsFeature -Name Web-Server, Web-WebServer, Web-Common-Http, Web-Default-Doc, Web-Static-Content, Web-ASP-Net45 -IncludeManagementTools
+          $secpasswd = ConvertTo-SecureString $env:VM_PASSWORD -AsPlainText -Force
+          $cred = New-Object System.Management.Automation.PSCredential ($env:VM_USERNAME, $secpasswd)
+          $session = New-PSSession -ComputerName $env:VM_HOST -Credential $cred -UseSSL -Port 5986 -SessionOption (New-PSSessionOption -SkipCACheck -SkipCNCheck)
 
-          $siteName = "Manatalol"
-          $physicalPath = "C:\inetpub\wwwroot\Manatalol"
-          $subDomain = $env:SUBDOMAIN
-          $bindingPort = 80
-          $ipAddress = "*"
+          Invoke-Command -Session $session -ScriptBlock {
+              param($subDomain)
+              Install-WindowsFeature -Name Web-Server -IncludeManagementTools
+              $siteName = "Manatalol"
+              $path = "C:\inetpub\wwwroot\Manatalol"
 
-          # Create site if it doesn't exist
-          if (-not (Get-Website -Name $siteName -ErrorAction SilentlyContinue)) {
-              Write-Host "Creating IIS site $siteName..."
-              New-Website -Name $siteName -Port $bindingPort -IPAddress $ipAddress -HostHeader $subDomain -PhysicalPath $physicalPath
-          } else {
-              Write-Host "Site $siteName already exists. Updating physical path..."
-              Set-ItemProperty "IIS:\Sites\$siteName" -Name physicalPath -Value $physicalPath
-          }
+              if (-not (Get-Website -Name $siteName -ErrorAction SilentlyContinue)) {
+                  New-Website -Name $siteName -Port 80 -PhysicalPath $path -HostHeader $subDomain
+              } else {
+                  Set-ItemProperty "IIS:\Sites\$siteName" -Name physicalPath -Value $path
+              }
 
-          Write-Host "Restarting IIS site..."
-          if ((Get-Website -Name $siteName).State -eq "Started") {
-              Stop-Website -Name $siteName
-          }
-          Start-Website -Name $siteName
+              Restart-WebAppPool -Name "DefaultAppPool"
+              Restart-Service W3SVC
+          } -ArgumentList $env:SUBDOMAIN
 
-          Write-Host "Deployment completed! Site $siteName is now live at $subDomain"
+          Remove-PSSession $session
